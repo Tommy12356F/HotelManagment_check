@@ -3,7 +3,7 @@ import room_module
 while True:
     print("\n=== HOTEL MANAGEMENT SYSTEM ===")
     print("1. Admin - Room Management")
-    print("2. Client - View Rooms")
+    print("2. Client - Room & Booking")
     print("3. Exit")
     choice = input("Enter your choice: ")
 
@@ -15,4 +15,4 @@ while True:
         print("Goodbye 👋")
         break
     else:
-        print("Invalid option!")
+        print("❌ Invalid choice, try again.")
