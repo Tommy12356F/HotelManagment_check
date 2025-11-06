@@ -322,10 +322,10 @@ def customer_entry():
         
         
 def register():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
+    df = load_csv(REGISTERED)
     email=input("Enter your email address:")
     
-    if email in clients['Email'].values:
+    if email in REGISTERED['Email'].values:
         print("Email already registered! Please login.")
         login()  
         return
@@ -333,37 +333,31 @@ def register():
         name=input("Enter your name:")                              
         age=int(input("Enter your age:"))
         contact=int(input("Enter your contact number:"))
-        reg_date=reg_date = datetime.today().strftime('%Y-%m-%d')
-        cust_id = "C" + str(np.random.randint(1000, 9999))
-        
+        cust_id = generate_unique_customer_id()
         psswd = f"{name}@python"
+
         print("YOU HAVE BEEN REGISTERED !!")
         print() 
         print ("Your password is-->\n", psswd)
-        print()
-        print (f"Your Customer ID is: {cust_id}")
 
-    
-
-            # Create new client record
+        
         new = {
-            'Client_Id': cust_id,
+            "CustomerID": cust_id,
             'Name': name,
             'Age': age,
-            'Contact': contact,
+            'Mobile': contact,
             'Email': email,
-            'Psswd': psswd,
-            'regDate': reg_date
             }
 
         # Convert to DataFrame
         new_df = pd.DataFrame([new])
 
+
         # Append to CSV (add header only if file is new)
         try:
-            new_df.to_csv('clients.csv', mode='a', index=False, header=False)
+            new_df.to_csv(REGISTERED, mode='a', index=False, header=False)
         except FileNotFoundError:
-            new_df.to_csv('clients.csv', index=False)
+            new_df.to_csv(REGISTERED, index=False)
 
     print(f"Registration successful! Your Client ID is {cust_id}.")
     return
@@ -371,18 +365,46 @@ def register():
 
 def login():
     while True:
-        x=input('Enter your name\n'.rjust(6))
-        y=input('Enter password\n'.rjust(6))
-        psswd=f"{x}@python"
-        if y==psswd:
-            print ("🏥 💊 🤝 WELCOME 🤝 💊 🏥".center(147))
-            patient()
+        df = pd.read_csv(REGISTERED, dtype=str)
+        x=input('Enter your name\n')
+        y=input('Enter your registered number\n')
+        if y==phone:       ##try to collect from csv file
+            print ("🏥 💊 🤝 WELCOME 🤝 💊 🏥")
+            return
         else:
-            print ("x x INCORRENT PASSWORD x x".center(147),
-                   "ACCESS DENIED! TRY AGAIN".center(147),sep="\n")
+            print ("x x INCORRENT PASSWORD x x"),
+                   "ACCESS DENIED! TRY AGAIN",sep="\n")
             break
-        
 
+        if y in df["Phone"].values:
+            # Optional: also verify name for extra security
+            record = df[df["Phone"] == y].iloc[0]
+            if record["Name"].strip().lower() == x.lower():
+                print("\n🏨 💊 🤝 WELCOME 🤝 💊 🏨")
+                print(f"Hello, {record['Name']}! You are now logged in.\n")
+                return record  # You can return customer data if needed
+            else:
+                print("❌ Incorrect name for this phone number. Try again.\n")
+        else:
+            print("❌ Phone number not found. Access denied!\n")
+
+        retry = input("Try again? (y/n): ").strip().lower()
+        if retry != 'y':
+            break
+
+
+        
+def generate_unique_customer_id():
+    """Generate a unique customer ID not already in customers.csv"""
+    customers_df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
+    
+    existing_ids = set(customers_df["CustomerID"].dropna().astype(str))
+    
+    # Generate until unique ID found
+    while True:
+        cust_id = "C" + str(np.random.randint(1000, 9999))
+        if cust_id not in existing_ids:
+            return cust_id
 
 # ==========================================================
 # RUN 
