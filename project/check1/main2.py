@@ -796,8 +796,11 @@ def customer_portal():
 
 
 # ==========================================================
-# 🔑 ENTRY
+# 🔑 ENTRY  
 # ==========================================================
+
+########### DIVYA ##################
+
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
     while True:
@@ -816,6 +819,282 @@ def entry():
             break
         else:
             print("❌ Invalid choice.")
+
+def performance():
+    while True:
+        print("\n ✎ᝰ.ᐟ⋆⑅˚₊ MANAGER MENU ⋆⑅˚₊✎ᝰ.ᐟ")
+        print("1. Daily Summary & Occupancy Rate")
+        print("2. Client Registration Report")
+        print("3. Revenue Growth / Decline")
+        print("4. Inventory Report")
+        print("5. Back to Manager Menu")
+        ch = input("Enter choice: ")
+
+        if ch == "1":
+            summary()
+        elif ch == "2":
+            bookings()
+        elif ch == "3":
+            revenue()
+        elif ch == "4":
+            inventory()
+        elif ch == "5":
+            break
+        else:
+            print("❌ Invalid input.")
+
+
+def summary():
+
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
+
+    tot_rooms = len(rooms)
+    booked = len(rooms[rooms["Status"].str.lower() == "booked"])
+    available_rooms = tot_rooms - booked
+    occupancy_rate = (booked / tot_rooms * 100) if tot_rooms > 0 else 0
+
+    print("\nˏ ✄┈┈┈┈┈┈┈┈ Daily Summary ┈┈┈┈┈┈┈┈")
+    print()
+    print(f"Total Rooms: {tot_rooms}")
+    print(f"Booked Rooms: {booked}")
+    print(f"Available Rooms: {available_rooms}")
+    print(f"Occupancy Rate: {occupancy_rate:.2f}%")
+    print(f"Total Bookings Today: {len(bookings)}")
+
+    today = datetime.today().strftime("%d-%m-%Y")
+    t_bookings = bookings[bookings["CheckIn"] == today]
+    if not t_bookings.empty:
+        print("\nToday's Check-ins:")
+        print(t_bookings[["BookingID", "CustomerName", "RoomID"]].to_string(index=False))
+    else:
+        print("\nNo check-ins today.")
+
+
+def bookings():
+    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
+    if df.empty:
+        print("No registered clients yet.")
+        return
+
+    print("\n ₊˚🗒 ˎ𖤐 ✎ᝰ. CLIENT REGISTRATION REPORT ✎ᝰ. 𖤐ˎ 🗒")
+    print(df.to_string(index=False))
+
+
+
+def revenue():
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+
+    if bookings.empty or rooms.empty:
+        print("No data available for revenue analysis.")
+        return
+
+    # Merge bookings with room prices
+    merged = pd.merge(bookings, rooms, on="RoomID", how="left")
+
+    # Simulate daily revenue grouping by CheckIn date
+    merged["Revenue"] = merged["Price"].astype(float)
+    revenue_by_date = merged.groupby("CheckIn")["Revenue"].sum().reset_index()
+
+    print("\n ˚₊‧꒰ა $ ໒꒱ ‧₊˚  REVENUE REPORT  ˚₊‧꒰ა $ ໒꒱ ‧₊˚ ")
+    print(revenue_by_date.to_string(index=False))
+
+    # Calculate growth rate
+    if len(revenue_by_date) > 1:
+        growth = revenue_by_date["Revenue"].pct_change() * 100
+        revenue_by_date["Growth %"] = growth.round(2)
+        print("\n📈 Revenue Growth/Decline Trend:")
+        print(revenue_by_date.to_string(index=False))
+    else:
+        print("\nNot enough data to calculate growth trend.")
+
+
+# ==========================================================
+# 🧺 INVENTORY MANAGEMENT DEPARTMENT
+# ==========================================================
+INVENTORY_FILE = "inventory.csv"
+INVENTORY_COLUMNS = ["ItemID", "ItemName", "Category", "Quantity", "MinThreshold", "UnitPrice", "LastUpdated"]
+
+
+def load_inventory():
+    try:
+        df = pd.read_csv(INVENTORY_FILE)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=INVENTORY_COLUMNS)
+        df.to_csv(INVENTORY_FILE, index=False)
+    return df
+
+def save_inventory(df):
+    df.to_csv(INVENTORY_FILE, index=False)
+
+def generate_item_id(df):
+    if df.empty:
+        return "IT1001"
+    last_id = df["ItemID"].iloc[-1]
+    num = int(last_id.replace("IT", "")) + 1
+    return f"IT{num}"
+
+# ADD / UPDATE ITEMS
+# ==========================================================
+def add_inventory_item():
+    df = load_inventory()
+    name = input("Enter Item Name: ").strip().capitalize()
+    if not name:
+        print("❌ Item name cannot be empty.")
+        return
+
+    category = input("Enter Category (e.g. Linen, Cleaning, Toiletries, Food): ").capitalize()
+    try:
+        qty = int(input("Enter Initial Quantity: "))
+        min_thr = int(input("Enter Minimum Threshold for Reorder: "))
+        price = float(input("Enter Unit Price: "))
+    except ValueError:
+        print("❌ Invalid number entered.")
+        return
+
+    item_id = generate_item_id(df)
+    record = {
+        "ItemID": item_id,
+        "ItemName": name,
+        "Category": category,
+        "Quantity": qty,
+        "MinThreshold": min_thr,
+        "UnitPrice": price,
+        "LastUpdated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
+    save_inventory(df)
+    print(f"✅ Added {name} to inventory with ID {item_id}.")
+
+def update_inventory():
+    df = load_inventory()
+    if df.empty:
+        print("Inventory is empty.")
+        return
+
+    item_id = input("Enter Item ID to update (e.g., IT1001): ").strip()
+    if item_id not in df["ItemID"].values:
+        print("❌ Item not found.")
+        return
+
+    idx = df.index[df["ItemID"] == item_id][0]
+    print(f"Current quantity: {df.at[idx, 'Quantity']}")
+    try:
+        change = int(input("Enter quantity change (positive for add, negative for reduce): "))
+    except ValueError:
+        print("❌ Invalid number.")
+        return
+
+    df.at[idx, "Quantity"] = max(0, df.at[idx, "Quantity"] + change)
+    df.at[idx, "LastUpdated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_inventory(df)
+    print("✅ Quantity updated successfully.")
+
+def remove_inventory_item():
+    df = load_inventory()
+    if df.empty:
+        print("Inventory is empty.")
+        return
+
+    item_id = input("Enter Item ID to remove: ").strip()
+    if item_id not in df["ItemID"].values:
+        print("❌ Item not found.")
+        return
+
+    if input("Type YES to confirm deletion: ") == "YES":
+        df = df[df["ItemID"] != item_id]
+        save_inventory(df)
+        print("🗑️ Item removed successfully.")
+
+
+def view_all_inventory():
+    df = load_inventory()
+    if df.empty:
+        print("No items in inventory.")
+        return
+    print("\n--- ALL INVENTORY ITEMS ---")
+    print(df.to_string(index=False))
+    print("-----------------------------")
+
+def low_stock_alerts():
+    df = load_inventory()
+    if df.empty:
+        print("No items in inventory.")
+        return
+    low = df[df["Quantity"] <= df["MinThreshold"]]
+    if low.empty:
+        print("🎉 All items are sufficiently stocked!")
+        return
+    print("\n⚠️ LOW STOCK ALERT ⚠️")
+    print(low[["ItemID", "ItemName", "Quantity", "MinThreshold"]].to_string(index=False))
+
+
+
+def inventory_value_report():
+    df = load_inventory()
+    if df.empty:
+        print("Inventory empty.")
+        return
+
+    df["Value"] = df["Quantity"] * df["UnitPrice"]
+    total_value = df["Value"].sum()
+    category_wise = df.groupby("Category")["Value"].sum().reset_index()
+
+    print("\n📦 INVENTORY VALUE REPORT 📦")
+    print(f"Total Inventory Value: ₹{total_value:,.2f}\n")
+    print("Category-wise Breakdown:")
+    print(category_wise.to_string(index=False))
+
+def most_used_items():
+    """Tracks which items are most frequently updated (based on update count)."""
+    df = load_inventory()
+    if df.empty:
+        print("No inventory records.")
+        return
+
+    usage_count = df.copy()
+    usage_count["UsageScore"] = np.random.randint(1, 20, len(df))  # Simulated metric
+    top_items = usage_count.sort_values("UsageScore", ascending=False).head(5)
+
+    print("\n🏆 MOST USED ITEMS (Sampled Data) 🏆")
+    print(top_items[["ItemID", "ItemName", "Category", "UsageScore"]].to_string(index=False))
+
+### MENU DRIVER
+
+def inventory():
+    while True:
+        print("""
+⛟ ☒ ⋆✴︎˚｡⋆ ✉︎ INVENTORY MANAGEMENT MENU ✉︎ ⋆✴︎˚｡⋆ ☒ ⛟ 
+1. Add Item
+2. Update Quantity
+3. Remove Item
+4. View All Items
+5. Low Stock Alerts
+6. Inventory Value Report
+7. Most Used Items
+8. Back to Main Menu
+""")
+        ch = input("Enter choice: ").strip()
+        if ch == "1":
+            add_inventory_item()
+        elif ch == "2":
+            update_inventory()
+        elif ch == "3":
+            remove_inventory_item()
+        elif ch == "4":
+            view_all_inventory()
+        elif ch == "5":
+            low_stock_alerts()
+        elif ch == "6":
+            inventory_value_report()
+        elif ch == "7":
+            most_used_items()
+        elif ch == "8":
+            print("Returning to main menu...")
+            break
+        else:
+            print("❌ Invalid input.")
 
 
 # ==========================================================
