@@ -9,10 +9,14 @@ import string
 ROOM_FILE = "rooms.csv"
 BOOKING_FILE = "bookings.csv"
 CUSTOMER_FILE = "customers.csv"
+REGISTERED = "regist.csv"
+
 
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
+REGISTERED_COLUMNS = ["CustomerID", "Name", "Age", "Mobile", "Email"]
+
 
 cust_id = "C" + str(np.random.randint(1000, 9999))
 # ==========================================================
@@ -314,7 +318,7 @@ def entry():
 
 def customer_entry():
     ch=input("You would like to login or register? L/R:")
-    if ch.lowercase()== 'r':
+    if ch.lower()== 'r':
         register()
     else:
         login()
@@ -322,10 +326,10 @@ def customer_entry():
         
         
 def register():
-    df = load_csv(REGISTERED)
+    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
     email=input("Enter your email address:")
     
-    if email in REGISTERED['Email'].values:
+    if email in df['Email'].values:
         print("Email already registered! Please login.")
         login()  
         return
@@ -345,7 +349,7 @@ def register():
             "CustomerID": cust_id,
             'Name': name,
             'Age': age,
-            'Mobile': contact,
+            'Phone': contact,
             'Email': email,
             }
 
@@ -360,7 +364,6 @@ def register():
             new_df.to_csv(REGISTERED, index=False)
 
     print(f"Registration successful! Your Client ID is {cust_id}.")
-    return
 
 
 def login():
@@ -368,30 +371,16 @@ def login():
         df = pd.read_csv(REGISTERED, dtype=str)
         x=input('Enter your name\n')
         y=input('Enter your registered number\n')
-        if y==phone:       ##try to collect from csv file
+        if y in df["Phone"].values:
+            record = df[df["Phone"] == y].iloc[0]
             print ("🏥 💊 🤝 WELCOME 🤝 💊 🏥")
+            print(f"Hello, {record['Name']}! You are now logged in.\n")
             return
         else:
-            print ("x x INCORRENT PASSWORD x x"),
-                   "ACCESS DENIED! TRY AGAIN",sep="\n")
+            print("x x INCORRECT MOBILE NUMBER x x")
+            print("ACCESS DENIED! TRY AGAIN\n")
+
             break
-
-        if y in df["Phone"].values:
-            # Optional: also verify name for extra security
-            record = df[df["Phone"] == y].iloc[0]
-            if record["Name"].strip().lower() == x.lower():
-                print("\n🏨 💊 🤝 WELCOME 🤝 💊 🏨")
-                print(f"Hello, {record['Name']}! You are now logged in.\n")
-                return record  # You can return customer data if needed
-            else:
-                print("❌ Incorrect name for this phone number. Try again.\n")
-        else:
-            print("❌ Phone number not found. Access denied!\n")
-
-        retry = input("Try again? (y/n): ").strip().lower()
-        if retry != 'y':
-            break
-
 
         
 def generate_unique_customer_id():
