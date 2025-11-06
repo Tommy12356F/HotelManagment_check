@@ -299,6 +299,7 @@ def customer_portal():
 ####### DIVYA #########
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
+    print("Your gateway to the heart of Delhi")
     while True:
         print("\nI am:\n1. Manager\n2. Customer\n3. Exit")
         role = input("Enter choice: ")
