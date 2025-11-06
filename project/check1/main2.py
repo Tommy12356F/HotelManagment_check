@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 import random
 import string
+import os
 
 # ==========================================================
 # GLOBAL FILES
@@ -483,7 +484,7 @@ def register():
 
         # Convert to DataFrame
         new_df = pd.DataFrame([new])
-
+        file_exists = os.path.exists(REGISTERED)
 
         # Append to CSV (add header only if file is new)
         try:
