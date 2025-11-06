@@ -14,7 +14,7 @@ ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 
-c_id = 100
+cust_id = "C" + str(np.random.randint(1000, 9999))
 # ==========================================================
 
 # ---------------------- CSV HELPERS ------------------------
@@ -291,10 +291,12 @@ def customer_portal():
 # ==========================================================
 # 🔑 ENTRY
 # ==========================================================
+
+####### DIVYA #########
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
     while True:
-        print("\nI am:\n1. Manager\n2. Receptionist\n3. Customer\n4. Exit")
+        print("\nI am:\n1. Manager\n2. Customer\n3. Exit")
         role = input("Enter choice: ")
         if role == "1":
             pwd = input("Enter Manager password: ")
@@ -303,23 +305,87 @@ def entry():
             else:
                 print("❌ Wrong password.")
         elif role == "2":
-            name = input("Enter your name: ")
-            pwd = input("Enter password: ")
-            if pwd == f"{name}@python":
-                receptionist_menu()
-            else:
-                print("❌ Invalid credentials.")
+            customer_entry()
         elif role == "3":
-            customer_portal()
-        elif role == "4":
             print("👋 Goodbye!")
             break
         else:
             print("❌ Invalid choice.")
 
+def customer_entry():
+    ch=input("You would like to login or register? L/R:")
+    if ch.lowercase()== 'r':
+        register()
+    else:
+        login()
+    customer_portal()
+        
+        
+def register():
+    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
+    email=input("Enter your email address:")
+    
+    if email in clients['Email'].values:
+        print("Email already registered! Please login.")
+        login()  
+        return
+    else:
+        name=input("Enter your name:")                              
+        age=int(input("Enter your age:"))
+        contact=int(input("Enter your contact number:"))
+        reg_date=reg_date = datetime.today().strftime('%Y-%m-%d')
+        cust_id = "C" + str(np.random.randint(1000, 9999))
+        
+        psswd = f"{name}@python"
+        print("YOU HAVE BEEN REGISTERED !!")
+        print() 
+        print ("Your password is-->\n", psswd)
+        print()
+        print (f"Your Customer ID is: {cust_id}")
+
+    
+
+            # Create new client record
+        new = {
+            'Client_Id': cust_id,
+            'Name': name,
+            'Age': age,
+            'Contact': contact,
+            'Email': email,
+            'Psswd': psswd,
+            'regDate': reg_date
+            }
+
+        # Convert to DataFrame
+        new_df = pd.DataFrame([new])
+
+        # Append to CSV (add header only if file is new)
+        try:
+            new_df.to_csv('clients.csv', mode='a', index=False, header=False)
+        except FileNotFoundError:
+            new_df.to_csv('clients.csv', index=False)
+
+    print(f"Registration successful! Your Client ID is {cust_id}.")
+    return
+
+
+def login():
+    while True:
+        x=input('Enter your name\n'.rjust(6))
+        y=input('Enter password\n'.rjust(6))
+        psswd=f"{x}@python"
+        if y==psswd:
+            print ("🏥 💊 🤝 WELCOME 🤝 💊 🏥".center(147))
+            patient()
+        else:
+            print ("x x INCORRENT PASSWORD x x".center(147),
+                   "ACCESS DENIED! TRY AGAIN".center(147),sep="\n")
+            break
+        
+
 
 # ==========================================================
-# RUN
+# RUN 
 # ==========================================================
-if __name__ == "__main__":
-    entry()
+
+entry()
