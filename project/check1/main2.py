@@ -949,7 +949,7 @@ def search_staff():
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
     while True:
-        print("\nI am:\n1. Manager\n2. Receptionist\n3. Customer\n4. Exit")
+        print("\nI am:\n1. Manager\n2. Customer\n3. Exit")
         role = input("Enter choice: ")
         if role == "1":
             pwd = input("Enter Manager password: ")
