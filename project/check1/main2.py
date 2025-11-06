@@ -15,7 +15,7 @@ REGISTERED = "regist.csv"
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
-REGISTERED_COLUMNS = ["CustomerID", "Name", "Age", "Mobile", "Email"]
+REGISTERED_COLUMNS = ["Cust_ID", "Name", "Age", "Phone", "Email"]
 
 
 cust_id = "C" + str(np.random.randint(1000, 9999))
@@ -299,7 +299,6 @@ def customer_portal():
 ####### DIVYA #########
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
-    print("Your gateway to the heart of Delhi")
     while True:
         print("\nI am:\n1. Manager\n2. Customer\n3. Exit")
         role = input("Enter choice: ")
@@ -323,7 +322,7 @@ def customer_entry():
         register()
     else:
         login()
-    customer_portal()
+        customer_portal()
         
         
 def register():
@@ -335,9 +334,13 @@ def register():
         login()  
         return
     else:
-        name=input("Enter your name:")                              
-        age=int(input("Enter your age:"))
-        contact=int(input("Enter your contact number:"))
+        try:
+            name=input("Enter your name:")                              
+            age=int(input("Enter your age:"))
+            contact=int(input("Enter your contact number:"))
+        except ValueError:
+            print("❌ Invalid input")
+            return
         cust_id = generate_unique_customer_id()
         psswd = f"{name}@python"
 
@@ -362,14 +365,14 @@ def register():
         try:
             new_df.to_csv(REGISTERED, mode='a', index=False, header=False)
         except FileNotFoundError:
-            new_df.to_csv(REGISTERED, index=False)
+            new_df.to_csv(REGISTERED, mode='a', index=False, header=not file_exists)
 
-    print(f"Registration successful! Your Client ID is {cust_id}.")
+    print(f"Registration successful! Your Customer ID is {cust_id}.")
 
 
 def login():
     while True:
-        df = pd.read_csv(REGISTERED, dtype=str)
+        df = load_csv(REGISTERED, REGISTERED_COLUMNS)
         x=input('Enter your name\n')
         y=input('Enter your registered number\n')
         if y in df["Phone"].values:
@@ -385,10 +388,9 @@ def login():
 
         
 def generate_unique_customer_id():
-    """Generate a unique customer ID not already in customers.csv"""
-    customers_df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
+    customers_df = load_csv(REGISTERED, REGISTERED_COLUMNS)
     
-    existing_ids = set(customers_df["CustomerID"].dropna().astype(str))
+    existing_ids = set(customers_df["Cust_ID"].dropna().astype(str))
     
     # Generate until unique ID found
     while True:
