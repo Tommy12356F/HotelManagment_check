@@ -1,7 +1,8 @@
-CustomerID,Name,Phone,Email,RoomID,DaysOfStay,RegDate
-C6906,tanvi,123456789,abc@def.com,,,
-C3491,divya,1231231234,def@abc.com,,,
-C4909,vedant,4564564567,def@abc.com,,,
-C1498,jasraj,7897897891,acd@ghj.com,,,
-C3838,katyayani,4564464567,def@ghy.com,,,
-C5354,Samarth,9864648272,dfsgxajhhj,456,5,2025-11-05
+CustomerID,Name,Email,Phone,RegDate,RoomID,DaysOfStay
+1,tanvi,abc@def.com,123456789,2025-10-31,101,4
+2,divya,def@abc.com,1231231234,2025-10-30,102,3
+4,vedant,def@abc.com,4564564567,2025-11-1,103,2
+5,jasraj,acd@ghj.com,7897897891,2025-11-3,104,4
+6,katyayani,def@ghy.com,4564464567,2025-11-4,105,3
+7,katz,ghy@fgh.com,5675675678,2025-11-6,106,2
+8,reyansh,feg@def.com,9009009003,2025-11-07 01:09:26,107,5
