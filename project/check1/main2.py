@@ -238,7 +238,8 @@ def manager_menu():
         print("1. View All Rooms")
         print("2. View All Bookings")
         print("3. Customer Records")
-        print("4. Exit to Main Menu")
+        print("4. Performance Report")
+        print("5. Exit to Main Menu")
         ch = input("Enter choice: ")
         if ch == "1":
             view_all_rooms()
@@ -247,6 +248,8 @@ def manager_menu():
         elif ch == "3":
             customer_menu()
         elif ch == "4":
+            performance()
+        elif ch == "5":
             break
         else:
             print("❌ Invalid input.")
@@ -398,6 +401,121 @@ def generate_unique_customer_id():
         cust_id = "C" + str(np.random.randint(1000, 9999))
         if cust_id not in existing_ids:
             return cust_id
+        
+
+# ==========================================================
+# REPORTS AND ANALYSIS
+# ==========================================================
+
+
+def performance():
+    while True:
+        print("\n ✎ᝰ.ᐟ⋆⑅˚₊ MANAGER MENU ⋆⑅˚₊✎ᝰ.ᐟ")
+        print("1. Daily Summary & Occupancy Rate")
+        print("2. Client Registration Report")
+        print("3. Revenue Growth / Decline")
+        print("4. Back to Manager Menu")
+        ch = input("Enter choice: ")
+
+        if ch == "1":
+            summary()
+        elif ch == "2":
+            bookings()
+        elif ch == "3":
+            revenue()
+        elif ch == "4":
+            manager_menu()   
+        elif ch == "5":
+            break
+        else:
+            print("❌ Invalid input.")
+
+
+def summary():
+
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
+
+    tot_rooms = len(rooms)
+    booked = len(rooms[rooms["Status"].str.lower() == "booked"])
+    available_rooms = tot_rooms - booked
+    occupancy_rate = (booked / tot_rooms * 100) if tot_rooms > 0 else 0
+
+    print("\nˏ ✄┈┈┈┈┈┈┈┈ Daily Summary ┈┈┈┈┈┈┈┈")
+    print()
+    print(f"Total Rooms: {tot_rooms}")
+    print(f"Booked Rooms: {booked}")
+    print(f"Available Rooms: {available_rooms}")
+    print(f"Occupancy Rate: {occupancy_rate:.2f}%")
+    print(f"Total Bookings Today: {len(bookings)}")
+
+    today = datetime.today().strftime("%d-%m-%Y")
+    t_bookings = bookings[bookings["CheckIn"] == today]
+    if not t_bookings.empty:
+        print("\nToday's Check-ins:")
+        print(t_bookings[["BookingID", "CustomerName", "RoomID"]].to_string(index=False))
+    else:
+        print("\n No check-ins today.")
+
+
+def bookings():
+    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
+    if df.empty:
+        print("No registered clients yet.")
+        return
+
+    print("\n ₊˚🗒 ˎ𖤐 ✎ᝰ. CLIENT REGISTRATION REPORT ✎ᝰ. 𖤐ˎ 🗒")
+    print(df.to_string(index=False))
+
+
+
+def revenue():
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+
+    if bookings.empty or rooms.empty:
+        print("No data available for revenue analysis.")
+        return
+
+    merged = pd.merge(bookings, rooms, on="RoomID", how="left")
+
+    #finding daily revenue 
+    merged["Revenue"] = merged["Price"].astype(float)
+    revenue_by_date = merged.groupby("CheckIn")["Revenue"].sum().reset_index()
+
+    print("\n ˚₊‧꒰ა $ ໒꒱ ‧₊˚  REVENUE REPORT  ˚₊‧꒰ა $ ໒꒱ ‧₊˚ ")
+    print(revenue_by_date.to_string(index=False))
+
+    # growth
+    if len(revenue_by_date) > 1:
+        growth = revenue_by_date["Revenue"].pct_change() * 100
+        revenue_by_date["Growth %"] = growth.round(2)
+        print("\n Revenue Growth/Decline Trend:")
+        print(revenue_by_date.to_string(index=False))
+    else:
+        print("\nNot enough data to calculate growth trend.")
+
+def booking_history_report():
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
+    if bookings.empty:
+        print("No booking history found.")
+        return
+
+    name = input("Enter Client Name to view history: ").strip()
+    record = bookings[bookings["CustomerName"].str.lower() == name.lower()]
+
+    if record.empty:
+        print("No bookings found for this client.")
+    else: 
+        print(f"\n ₊˚.🎧 ✩ BOOKING HISTORY FOR {name.upper()}:  ₊˚.🎧 ✩  ")
+        print(record.to_string(index=False))
+
+        # Simulate receipts
+        rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+        merged = pd.merge(record, rooms, on="RoomID", how="left")
+        merged["Revenue"] = merged["Price"].astype(float)
+        total = merged["Revenue"].sum()
+
 
 # ==========================================================
 # RUN 
