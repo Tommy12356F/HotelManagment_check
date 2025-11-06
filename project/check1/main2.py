@@ -484,13 +484,13 @@ def view_all_bookings():
 def manager_menu():
     while True:
         print("\n--- MANAGER MENU ---")
-        print("1. View All Rooms")
+        print("1. Room Management")
         print("2. View All Bookings")
         print("3. Customer Records")
         print("4. Exit to Main Menu")
         ch = input("Enter choice: ")
         if ch == "1":
-            view_all_rooms()
+            room_tasks()
         elif ch == "2":
             view_all_bookings()
         elif ch == "3":
@@ -501,7 +501,7 @@ def manager_menu():
             print("❌ Invalid input.")
 
 
-def receptionist_menu():
+def room_tasks():
     while True:
         print("\n--- RECEPTIONIST MENU ---")
         print("1. Add Room")
