@@ -1,0 +1,173 @@
+#swimming Pool
+
+def book_swimming_pool():
+    print("\n=== SWIMMING POOL BOOKING ===")
+
+    # Ask user for date
+    date_str = input("Enter the date for swimming pool booking (YYYY-MM-DD): ")
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Invalid date format. Please use YYYY-MM-DD.")
+        return
+
+    # Create 8 random time slots
+    possible_times = ["06:00 AM", "07:30 AM", "09:00 AM", "10:30 AM", 
+                      "12:00 PM", "02:00 PM", "04:00 PM", "06:00 PM"]
+    random.shuffle(possible_times)
+    time_slots = possible_times[:8]
+
+    # Define 5 free and 3 paid slots
+    slots = []
+    for i, time in enumerate(time_slots):
+        slot_type = "Free" if i < 5 else "Paid"
+        slots.append({"time": time, "type": slot_type})
+
+    print("\nAvailable Swimming Pool Slots for", date_obj)
+    print("------------------------------------------------")
+    for i, slot in enumerate(slots, 1):
+        print(f"{i}. {slot['time']} - {slot['type']} Session")
+    print("------------------------------------------------")
+
+    # Booking prompt
+    choice = input("Would you like to book a slot? (yes/no): ").lower()
+    if choice != "yes":
+        print("No booking made.")
+        return
+
+    try:
+        slot_choice = int(input("Enter the slot number (1-8): "))
+        if slot_choice not in range(1, 9):
+            print("Invalid slot number.")
+            return
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    selected_slot = slots[slot_choice - 1]
+    cust_id = input("Enter your Customer ID: ")
+
+    if selected_slot["type"].lower() == "paid":
+        print("₹300 will be added to your bill (paid swimming slot).")
+        # update_customer_bill(cust_id, 300)
+
+    # Record booking
+    record = {
+        "date": str(date_obj),
+        "time_slot": selected_slot["time"],
+        "slot_type": selected_slot["type"],
+        "customer_id": cust_id,
+        "status": "Booked"
+    }
+
+    # Save to CSV
+    filename = "swimming_pool_bookings.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
+    else:
+        df = pd.DataFrame([record])
+
+    df.to_csv(filename, index=False)
+    print(f"\n✅ Swimming Pool slot booked successfully for {selected_slot['time']} on {date_obj}!")
+    print("Record saved in swimming_pool_bookings.csv\n")
+
+
+
+
+
+#Banquet Hall
+def book_banquet_hall():
+    print("\n=== BANQUET HALL BOOKING ===")
+
+    # Ask for date
+    date_str = input("Enter the date for banquet hall booking (YYYY-MM-DD): ")
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Invalid date format. Please use YYYY-MM-DD.")
+        return
+
+    # Create 3 time slots
+    possible_times = ["10:00 AM - 01:00 PM", "02:00 PM - 05:00 PM", "06:00 PM - 09:00 PM"]
+    slots = []
+    for i, time in enumerate(possible_times):
+        slot_type = "Free" if i < 1 else "Paid"
+        slots.append({"time": time, "type": slot_type})
+
+    print("\nAvailable Banquet Hall Slots for", date_obj)
+    print("------------------------------------------------")
+    for i, slot in enumerate(slots, 1):
+        print(f"{i}. {slot['time']} - {slot['type']} Booking")
+    print("------------------------------------------------")
+
+    # Booking prompt
+    choice = input("Would you like to book a slot? (yes/no): ").lower()
+    if choice != "yes":
+        print("No booking made.")
+        return
+
+    try:
+        slot_choice = int(input("Enter the slot number (1-3): "))
+        if slot_choice not in range(1, 4):
+            print("Invalid slot number.")
+            return
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    selected_slot = slots[slot_choice - 1]
+    cust_id = input("Enter your Customer ID: ")
+
+    if selected_slot["type"].lower() == "paid":
+        print("₹1000 will be added to your bill (paid banquet slot).")
+        # update_customer_bill(cust_id, 1000)
+
+    # Record booking
+    record = {
+        "date": str(date_obj),
+        "time_slot": selected_slot["time"],
+        "slot_type": selected_slot["type"],
+        "customer_id": cust_id,
+        "status": "Booked"
+    }
+
+    # Save to CSV
+    filename = "banquet_hall_bookings.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
+    else:
+        df = pd.DataFrame([record])
+
+    df.to_csv(filename, index=False)
+    print(f"\n✅ Banquet Hall slot booked successfully for {selected_slot['time']} on {date_obj}!")
+    print("Record saved in banquet_hall_bookings.csv\n")
+#Updated Menu:
+def customer_portal():
+    while True:
+        print("\n--- CUSTOMER PORTAL ---")
+        print("1. View Available Rooms")
+        print("2. Make Booking")
+        print("3. Room Service")
+        print("4. Swimming Pool Booking")
+        print("5. Banquet Hall Booking")
+        print("6. Back to Main Menu")
+
+        ch = input("Enter your choice: ")
+
+        if ch == "1":
+            show_available_rooms()
+        elif ch == "2":
+            make_booking()
+        elif ch == "3":
+            room_service()
+        elif ch == "4":
+            book_swimming_pool()
+        elif ch == "5":
+            book_banquet_hall()
+        elif ch == "6":
+            print("Returning to main menu...")
+            break
+        else:
+            print("❌ Invalid input. Please try again.")
