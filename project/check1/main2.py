@@ -10,12 +10,14 @@ import os
 ROOM_FILE = "rooms.csv"
 BOOKING_FILE = "bookings.csv"
 CUSTOMER_FILE = "customers.csv"
+REGISTERED = "regist.csv"
 
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 CSV_FILE = "customers.csv"
 COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
+REGISTERED_COLUMNS = ["Cust_ID", "Name", "Age", "Phone", "Email"]
 
 
 
