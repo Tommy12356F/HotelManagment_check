@@ -10,14 +10,14 @@ import os
 ROOM_FILE = "rooms.csv"
 BOOKING_FILE = "bookings.csv"
 CUSTOMER_FILE = "customers.csv"
-REGISTERED = "regist.csv"
+
 
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 CSV_FILE = "customers.csv"
 COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
-REGISTERED_COLUMNS = ["Cust_ID", "Name", "Age", "Phone", "Email"]
+
 
 
 
@@ -567,15 +567,8 @@ def entry():
             else:
                 print("❌ Wrong password.")
         elif role == "2":
-            name = input("Enter your name: ")
-            pwd = input("Enter password: ")
-            if pwd == f"{name}@python":
-                receptionist_menu()
-            else:
-                print("❌ Invalid credentials.")
-        elif role == "3":
             customer_portal()
-        elif role == "4":
+        elif role == "3":
             print("👋 Goodbye!")
             break
         else:
