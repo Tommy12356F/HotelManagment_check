@@ -1265,6 +1265,203 @@ def inventory():
 
 
 # ==========================================================
+# 💰 BILLING & PAYMENTS MODULE
+##########  JASRAJ  #############
+# ==========================================================
+BILLING_FILE = "billings.csv"
+PAYMENT_FILE = "payments.csv"
+
+BILL_COLS = ["BillingID", "CustomerID", "RoomID", "RoomCharge", "ServiceCharge", "Tax", "Discount", "Total", "Date"]
+PAY_COLS = ["PaymentID", "BillingID", "PaymentMethod", "AmountPaid", "PaymentDate", "Status"]
+
+
+def load_billing_data():
+    try:
+        return pd.read_csv(BILLING_FILE)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=BILL_COLS)
+        df.to_csv(BILLING_FILE, index=False)
+        return df
+    
+def load_data():
+    if not os.path.exists(CSV_FILE):
+        df = pd.DataFrame(columns=BILL_COLS)
+        df.to_csv(CSV_FILE, index=False)
+
+    try:
+        df = pd.read_csv(CSV_FILE)
+        if df.empty:
+            df = pd.DataFrame(columns=BILL_COLS)
+    except pd.errors.EmptyDataError:
+        df = pd.DataFrame(columns=BILL_COLS)
+    except Exception as e:
+        print(f"⚠️ Error loading data: {e}")
+        df = pd.DataFrame(columns=BILL_COLS)
+
+    for col in COLUMNS:
+        if col not in df.columns:
+            df[col] = pd.NA
+
+
+
+def load_payment_data():
+    try:
+        return pd.read_csv(PAYMENT_FILE)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=PAY_COLS)
+        df.to_csv(PAYMENT_FILE, index=False)
+        return df
+
+
+def save_billing_data(df):
+    df.to_csv(BILLING_FILE, index=False)
+
+
+def save_payment_data(df):
+    df.to_csv(PAYMENT_FILE, index=False)
+
+
+# ---------------------- BILL GENERATION ----------------------
+def generate_bill():
+    customers = load_data(CUSTOMER_FILE)  
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+    billings = load_billing_data()
+
+    if customers.empty:
+        print("No customers available.")
+        return
+
+    print("\n--- Generate Bill ---")
+    cid = input("Enter Customer ID: ").strip()
+
+    if not cid.isdigit() or int(cid) not in customers["CustomerID"].astype(int).values:
+        print("Invalid Customer ID.")
+        return
+
+    cust = customers[customers["CustomerID"] == int(cid)].iloc[0]
+
+    room_id = cust["RoomID"]
+    stay_days = cust["DaysOfStay"]
+    room_rate = 0
+    if room_id in rooms["RoomID"].values:
+        room_rate = float(rooms.loc[rooms["RoomID"] == room_id, "Price"].values[0])
+
+    room_charge = room_rate * stay_days
+    service_charge = float(input("Enter service charge (if any): ") or 0)
+    discount = float(input("Enter discount (if any): ") or 0)
+    tax = round((room_charge + service_charge) * 0.18, 2)
+    total = round(room_charge + service_charge + tax - discount, 2)
+
+    billing_id = "BILL" + str(np.random.randint(1000, 9999))
+    new_bill = pd.DataFrame([{
+        "BillingID": billing_id,
+        "CustomerID": cid,
+        "RoomID": room_id,
+        "RoomCharge": room_charge,
+        "ServiceCharge": service_charge,
+        "Tax": tax,
+        "Discount": discount,
+        "Total": total,
+        "Date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }])
+
+    billings = pd.concat([billings, new_bill], ignore_index=True)
+    save_billing_data(billings)
+
+    print("\n✅ Bill Generated Successfully!")
+    print(f"Billing ID: {billing_id}")
+    print(f"Customer: {cust['Name']}")
+    print(f"Room: {room_id} | Days: {stay_days} | Rate: ₹{room_rate}")
+    print(f"Total Amount (after tax & discount): ₹{total}\n")
+
+
+# ---------------------- PAYMENT ----------------------
+def make_payment():
+    billings = load_billing_data()
+    payments = load_payment_data()
+
+    if billings.empty:
+        print("No billing records available.")
+        return
+
+    bid = input("Enter Billing ID to pay: ").strip()
+    if bid not in billings["BillingID"].values:
+        print("Invalid Billing ID.")
+        return
+
+    bill = billings[billings["BillingID"] == bid].iloc[0]
+    amount_due = bill["Total"]
+
+    print(f"Amount Due: ₹{amount_due}")
+    method = input("Payment Method (Cash/Card/UPI): ").capitalize() or "Cash"
+    amount_paid = float(input("Enter Amount Paid: ") or amount_due)
+
+    status = "Paid" if amount_paid >= amount_due else "Partial"
+    payment_id = "PAY" + str(np.random.randint(1000, 9999))
+    payment_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    new_payment = pd.DataFrame([{
+        "PaymentID": payment_id,
+        "BillingID": bid,
+        "PaymentMethod": method,
+        "AmountPaid": amount_paid,
+        "PaymentDate": payment_date,
+        "Status": status
+    }])
+
+    payments = pd.concat([payments, new_payment], ignore_index=True)
+    save_payment_data(payments)
+
+    print(f"\n✅ Payment Successful! ID: {payment_id}")
+    print(f"Status: {status}\n")
+
+
+def view_bills():
+    df = load_billing_data()
+    if df.empty:
+        print("No bills found.")
+        return
+    print("\n--- ALL BILLS ---")
+    print(df.to_string(index=False))
+
+
+def view_payments():
+    df = load_payment_data()
+    if df.empty:
+        print("No payments found.")
+        return
+    print("\n--- ALL PAYMENTS ---")
+    print(df.to_string(index=False))
+
+
+# ---------------------- BILLING MENU ----------------------
+def billing_menu():
+    while True:
+        print("""
+==================== BILLING & PAYMENTS ====================
+1. Generate Bill
+2. Make Payment
+3. View Bills
+4. View Payments
+5. Back
+============================================================
+""")
+        ch = input("Enter your choice: ").strip()
+        if ch == "1":
+            generate_bill()
+        elif ch == "2":
+            make_payment()
+        elif ch == "3":
+            view_bills()
+        elif ch == "4":
+            view_payments()
+        elif ch == "5":
+            break
+        else:
+            print("Invalid choice.")
+
+
+# ==========================================================
 # RUN
 # ==========================================================
 if __name__ == "__main__":
