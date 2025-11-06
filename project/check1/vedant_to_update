@@ -171,3 +171,7 @@ def customer_portal():
             break
         else:
             print("❌ Invalid input. Please try again.")
+################################################################
+format code
+check if its possible to link all payments
+
