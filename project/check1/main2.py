@@ -10,16 +10,15 @@ import os
 ROOM_FILE = "rooms.csv"
 BOOKING_FILE = "bookings.csv"
 CUSTOMER_FILE = "customers.csv"
-REGISTERED = "regist.csv"
-
 
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
-CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "Room", "StayDays", "CreatedAt"]
-REGISTERED_COLUMNS = ["Cust_ID", "Name", "Age", "Phone", "Email"]
+CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
+CSV_FILE = "customers.csv"
+COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 
 
-cust_id = "C" + str(np.random.randint(1000, 9999))
+c_id = 100
 # ==========================================================
 
 # ---------------------- CSV HELPERS ------------------------
@@ -40,36 +39,78 @@ def save_csv(filename, df):
 
 # ==========================================================
 # 🧾 CUSTOMER MANAGEMENT (from customer.py)
-#========================TANVI===============================
 # ==========================================================
-"""
-Customer Management Module
-- Pandas DataFrame stored to customers.csv
-- Uses NumPy for ID generation & stay duration stats
-- Full CRUD + validation + analytics
-"""
+def load_data():
+    """Loads the customer data safely, creating the CSV if missing."""
+    if not os.path.exists(CSV_FILE):
+        df = pd.DataFrame(columns=COLUMNS)
+        df.to_csv(CSV_FILE, index=False)
+        return df.astype({
+            "CustomerID": "Int64", "Name": "string", "Phone": "string",
+            "Email": "string", "RoomID": "string", "DaysOfStay": "Int64",
+            "RegDate": "string"
+        })
 
-# Validation 
+    try:
+        df = pd.read_csv(CSV_FILE)
+        if df.empty:
+            df = pd.DataFrame(columns=COLUMNS)
+    except pd.errors.EmptyDataError:
+        df = pd.DataFrame(columns=COLUMNS)
+    except Exception as e:
+        print(f"⚠️ Error loading data: {e}")
+        df = pd.DataFrame(columns=COLUMNS)
+
+    for col in COLUMNS:
+        if col not in df.columns:
+            df[col] = pd.NA
+
+    return df.astype({
+        "CustomerID": "Int64", "Name": "string", "Phone": "string",
+        "Email": "string", "RoomID": "string", "DaysOfStay": "Int64",
+        "RegDate": "string"
+    })
+
+
+def save_data(df):
+    """Saves customer data safely to CSV."""
+    out = df.copy()
+    out.to_csv(CSV_FILE, index=False)
+
+
+# ==========================================================
+# VALIDATION FUNCTIONS
+# ==========================================================
 def validate_phone(phone):
+    """Ensures phone number is exactly 10 digits."""
     if not isinstance(phone, str) or len(phone.strip()) != 10:
         return False
     arr = np.array(list(phone))
     return np.all(arr >= "0") and np.all(arr <= "9")
 
+
 def validate_email(email):
+    """Checks basic email pattern."""
     return isinstance(email, str) and "@" in email and "." in email.split("@")[-1]
 
-#  ID Generation 
+
+# ==========================================================
+# ID GENERATION
+# ==========================================================
 def generate_customer_id(df):
+    """Auto-generates unique Customer ID."""
     if df.empty or df["CustomerID"].dropna().empty:
         return 1001
-
     existing_ids = df["CustomerID"].dropna().astype(int).to_numpy()
     new_id = int(np.max(existing_ids) + 1)
     return new_id
 
-#  CRUD 
+
+# ==========================================================
+# CRUD OPERATIONS
+# ==========================================================
 def add_customer(df):
+    """Adds a new customer entry."""
     cid = generate_customer_id(df)
     print(f"\nAssigned Customer ID: {cid}")
 
@@ -89,9 +130,8 @@ def add_customer(df):
             break
         print("Invalid email!")
 
-    room = input("Enter Room No: ").strip() or pd.NA
+    room = input("Enter Room ID (if any): ").strip() or pd.NA
 
-    #  Stay Days (Hybrid)
     stay = input("Stay Duration (days) — leave blank for auto: ").strip()
     if stay.isdigit():
         staydays = int(stay)
@@ -99,7 +139,6 @@ def add_customer(df):
         staydays = int(np.random.randint(1, 31))
         print(f"Auto-assigned Stay Days: {staydays}")
 
-    # Prevent duplicate phone
     if not df[df["Phone"] == phone].empty:
         print("Phone already exists! Not adding.")
         return df
@@ -109,9 +148,9 @@ def add_customer(df):
         "Name": name,
         "Phone": phone,
         "Email": email,
-        "Room": room,
-        "StayDays": staydays,
-        "CreatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "RoomID": room,
+        "DaysOfStay": staydays,
+        "RegDate": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
@@ -119,14 +158,18 @@ def add_customer(df):
     print("✅ Customer added.\n")
     return df
 
+
 def view_customers(df):
+    """Displays all customers."""
     if df.empty:
         print("\nNo customers found.\n")
         return
     print("\nCustomer List:")
     print(df.to_string(index=False), "\n")
 
+
 def search_customer(df):
+    """Search for a customer by ID, name, or phone."""
     key = input("Search by ID / Phone / Name: ").strip()
     if key.isdigit():
         result = df[(df["CustomerID"] == int(key)) | (df["Phone"] == key)]
@@ -138,8 +181,9 @@ def search_customer(df):
     else:
         print(result.to_string(index=False), "\n")
 
+
 def update_customer(df):
-    """Update customer details including StayDays & CreatedAt."""
+    """Update customer details including stay duration and reg date."""
     cid = input("Enter Customer ID to update: ").strip()
     if not cid.isdigit():
         print("Invalid ID.")
@@ -154,60 +198,56 @@ def update_customer(df):
     i = idx[0]
     print("Leave blank to keep same value.")
 
-    current_phone = df.at[i,"Phone"]
-    current_email = df.at[i,"Email"]
-    current_room = df.at[i,"Room"]
-    current_stay = df.at[i,"StayDays"]
-    current_created = df.at[i,"CreatedAt"]
+    current_phone = df.at[i, "Phone"]
+    current_email = df.at[i, "Email"]
+    current_room = df.at[i, "RoomID"]
+    current_stay = df.at[i, "DaysOfStay"]
+    current_reg = df.at[i, "RegDate"]
 
-    # --- Phone ---
     new_phone = input(f"New Phone [{current_phone}]: ").strip()
     if new_phone:
         if validate_phone(new_phone):
-            df.at[i,"Phone"] = new_phone
+            df.at[i, "Phone"] = new_phone
         else:
             print("Invalid phone, not updated.")
 
-    # --- Email ---
     new_email = input(f"New Email [{current_email}]: ").strip()
     if new_email:
         if validate_email(new_email):
-            df.at[i,"Email"] = new_email
+            df.at[i, "Email"] = new_email
         else:
             print("Invalid email, not updated.")
 
-    # --- Room ---
-    new_room = input(f"New Room [{current_room}]: ").strip()
+    new_room = input(f"New Room ID [{current_room}]: ").strip()
     if new_room:
-        df.at[i,"Room"] = new_room
+        df.at[i, "RoomID"] = new_room
 
-    # --- Stay Days ---
     new_stay = input(f"New Stay Days [{current_stay}]: ").strip()
     if new_stay:
         if new_stay.isdigit():
-            df.at[i,"StayDays"] = int(new_stay)
+            df.at[i, "DaysOfStay"] = int(new_stay)
         else:
             print("Invalid stay days, not updated.")
 
-    # --- Created At ---
-    new_created = input(f"New CreatedAt (YYYY-MM-DD HH:MM:SS) [{current_created}]: ").strip()
-    if new_created:
+    new_reg = input(f"New RegDate (YYYY-MM-DD HH:MM:SS) [{current_reg}]: ").strip()
+    if new_reg:
         try:
-            # validate datetime format
-            datetime.strptime(new_created, "%Y-%m-%d %H:%M:%S")
-            df.at[i,"CreatedAt"] = new_created
+            datetime.strptime(new_reg, "%Y-%m-%d %H:%M:%S")
+            df.at[i, "RegDate"] = new_reg
         except ValueError:
-            print("Invalid datetime format! Correct format: YYYY-MM-DD HH:MM:SS")
+            print("Invalid datetime format! Use YYYY-MM-DD HH:MM:SS")
             print("Not updated.")
 
     save_data(df)
-    print(" Customer updated successfully.\n")
+    print("✅ Customer updated successfully.\n")
     return df
 
 
 def delete_customer(df):
+    """Deletes a customer by ID."""
     cid = input("Enter Customer ID to delete: ").strip()
-    if not cid.isdigit(): return df
+    if not cid.isdigit():
+        return df
     cid = int(cid)
 
     idx = df.index[df["CustomerID"] == cid]
@@ -218,28 +258,36 @@ def delete_customer(df):
     if input("Type YES to confirm delete: ") == "YES":
         df = df.drop(idx).reset_index(drop=True)
         save_data(df)
-        print("Deleted.\n")
+        print("🗑️ Deleted.\n")
     return df
 
-# Stats
+
+# ==========================================================
+# ANALYTICS
+# ==========================================================
 def stay_duration_stats(df):
-    if df.empty or df["StayDays"].dropna().empty:
+    """Show statistical analytics of stay durations."""
+    if df.empty or df["DaysOfStay"].dropna().empty:
         print("No stay data yet.\n")
         return
 
-    arr = df["StayDays"].dropna().to_numpy()
-    print("\n Stay Duration Stats:")
+    arr = df["DaysOfStay"].dropna().to_numpy()
+    print("\n📊 Stay Duration Stats 📊")
     print(f"- Total Guests: {len(arr)}")
     print(f"- Avg Stay: {np.mean(arr):.2f} days")
     print(f"- Max Stay: {np.max(arr)} days")
     print(f"- Min Stay: {np.min(arr)} days\n")
 
-# Menu 
-def main():
+
+# ==========================================================
+# MENU DRIVER
+# ==========================================================
+def customer_menu():
+    """Interactive customer management menu."""
     df = load_data()
     while True:
         print("""
-⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆˚₊𖥧CUSTOMER MANAGEMENT⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆ ˚₊𖥧⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆
+⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆˚₊𖥧 CUSTOMER MANAGEMENT ⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆˚₊𖥧
 1. Add Customer
 2. View Customers
 3. Search Customer
@@ -249,20 +297,23 @@ def main():
 7. Exit
 """)
         ch = input("Enter choice: ")
-        if ch == "1": df = add_customer(df)
-        elif ch == "2": view_customers(df)
-        elif ch == "3": search_customer(df)
-        elif ch == "4": df = update_customer(df)
-        elif ch == "5": df = delete_customer(df)
-        elif ch == "6": stay_duration_stats(df)
+        if ch == "1":
+            df = add_customer(df)
+        elif ch == "2":
+            view_customers(df)
+        elif ch == "3":
+            search_customer(df)
+        elif ch == "4":
+            df = update_customer(df)
+        elif ch == "5":
+            df = delete_customer(df)
+        elif ch == "6":
+            stay_duration_stats(df)
         elif ch == "7":
-            print("Goodbye!")
+            print("Returning to main menu...\n")
             break
         else:
             print("Invalid.\n")
-
-if __name__ == "__main__":
-    main()
 
 # ==========================================================
 # 🏨 ROOM MANAGEMENT
@@ -313,6 +364,80 @@ def show_available_rooms():
         print("\n--- AVAILABLE ROOMS ---")
         print(available[["RoomID", "RoomType", "Price"]].to_string(index=False))
 
+def room_service():
+    print("\n=== ROOM SERVICE BOOKING ===")
+
+    # Ask user for a date (format: YYYY-MM-DD)
+    date_str = input("Enter the date for room service (YYYY-MM-DD): ")
+
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Invalid date format. Please use YYYY-MM-DD.")
+        return
+
+    # Generate 5 random time slots for the day
+    possible_times = ["08:00 AM", "10:00 AM", "12:00 PM", "03:00 PM", "06:00 PM"]
+    random.shuffle(possible_times)
+    time_slots = possible_times[:5]
+
+    # Define 3 free and 2 paid slots
+    slots = []
+    for i, time in enumerate(time_slots):
+        slot_type = "Free" if i < 3 else "Paid"
+        slots.append({"time": time, "type": slot_type})
+
+    print("\nAvailable Room Service Slots for", date_obj)
+    print("------------------------------------------------")
+    for i, slot in enumerate(slots, 1):
+        print(f"{i}. {slot['time']} - {slot['type']} Service")
+    print("------------------------------------------------")
+
+    # Ask if user wants to book one
+    choice = input("Would you like to book a slot? (yes/no): ").lower()
+    if choice != "yes":
+        print("No booking made.")
+        return
+
+    try:
+        slot_choice = int(input("Enter the slot number (1-5): "))
+        if slot_choice not in range(1, 6):
+            print("Invalid slot number.")
+            return
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    selected_slot = slots[slot_choice - 1]
+    cust_id = input("Enter your Customer ID: ")
+
+    # Billing logic
+    if selected_slot["type"].lower() == "paid":
+        print("₹200 will be added to your bill (paid service).")
+        # Billing integration placeholder
+        # update_customer_bill(cust_id, 200)
+
+    # Prepare data
+    record = {
+        "date": str(date_obj),
+        "time_slot": selected_slot["time"],
+        "slot_type": selected_slot["type"],
+        "customer_id": cust_id,
+        "status": "Booked"
+    }
+
+    # Save booking
+    filename = "room_services.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
+    else:
+        df = pd.DataFrame([record])
+
+    df.to_csv(filename, index=False)
+    print(f"\n✅ Room service booked successfully for {selected_slot['time']} on {date_obj}!")
+    print("Record saved in room_services.csv\n")
+
 
 # ==========================================================
 # 📘 BOOKING MANAGEMENT
@@ -359,8 +484,7 @@ def manager_menu():
         print("1. View All Rooms")
         print("2. View All Bookings")
         print("3. Customer Records")
-        print("4. Performance Report")
-        print("5. Exit to Main Menu")
+        print("4. Exit to Main Menu")
         ch = input("Enter choice: ")
         if ch == "1":
             view_all_rooms()
@@ -369,8 +493,6 @@ def manager_menu():
         elif ch == "3":
             customer_menu()
         elif ch == "4":
-            performance()
-        elif ch == "5":
             break
         else:
             print("❌ Invalid input.")
@@ -404,28 +526,36 @@ def customer_portal():
         print("\n--- CUSTOMER PORTAL ---")
         print("1. View Available Rooms")
         print("2. Make Booking")
-        print("3. Back to Main Menu")
-        ch = input("Enter choice: ")
+        print("3. Room Service")          # 🆕 New option
+        print("4. Book Other Services")   # 🆕 Placeholder for next part
+        print("5. Back to Main Menu")
+
+        ch = input("Enter your choice: ")
+
         if ch == "1":
             show_available_rooms()
         elif ch == "2":
             make_booking()
         elif ch == "3":
+            room_service()               # 🆕 Calls the new Room Service function
+        elif ch == "4":
+            print("\n🚧 This feature (Book Other Services) is under development.\n")
+            # Future integration for Swimming Pool, Banquet Hall, etc.
+        elif ch == "5":
+            print("Returning to main menu...")
             break
         else:
-            print("❌ Invalid input.")
+            print("❌ Invalid input. Please try again.")
+
 
 
 # ==========================================================
 # 🔑 ENTRY
 # ==========================================================
-
-####### DIVYA #########
 def entry():
     print("\n✨🏨 WELCOME TO DilliDarshan 🏨✨")
-    print("Your gateway to the heart of Delhi")
     while True:
-        print("\nI am:\n1. Manager\n2. Customer\n3. Exit")
+        print("\nI am:\n1. Manager\n2. Receptionist\n3. Customer\n4. Exit")
         role = input("Enter choice: ")
         if role == "1":
             pwd = input("Enter Manager password: ")
@@ -434,212 +564,23 @@ def entry():
             else:
                 print("❌ Wrong password.")
         elif role == "2":
-            customer_entry()
+            name = input("Enter your name: ")
+            pwd = input("Enter password: ")
+            if pwd == f"{name}@python":
+                receptionist_menu()
+            else:
+                print("❌ Invalid credentials.")
         elif role == "3":
+            customer_portal()
+        elif role == "4":
             print("👋 Goodbye!")
             break
         else:
             print("❌ Invalid choice.")
 
-def customer_entry():
-    ch=input("You would like to login or register? L/R:")
-    if ch.lower()== 'r':
-        register()
-    else:
-        login()
-        customer_portal()
-        
-        
-def register():
-    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
-    email=input("Enter your email address:")
-    
-    if email in df['Email'].values:
-        print("Email already registered! Please login.")
-        login()  
-        return
-    else:
-        try:
-            name=input("Enter your name:")                              
-            age=int(input("Enter your age:"))
-            contact=int(input("Enter your contact number:"))
-        except ValueError:
-            print("❌ Invalid input")
-            return
-        cust_id = generate_unique_customer_id()
-        psswd = f"{name}@python"
-
-        print("YOU HAVE BEEN REGISTERED !!")
-        print() 
-        print ("Your password is-->\n", psswd)
-
-        
-        new = {
-            "CustomerID": cust_id,
-            'Name': name,
-            'Age': age,
-            'Phone': contact,
-            'Email': email,
-            }
-
-        # Convert to DataFrame
-        new_df = pd.DataFrame([new])
-        file_exists = os.path.exists(REGISTERED)
-
-        # Append to CSV (add header only if file is new)
-        try:
-            new_df.to_csv(REGISTERED, mode='a', index=False, header=False)
-        except FileNotFoundError:
-            new_df.to_csv(REGISTERED, mode='a', index=False, header=not file_exists)
-
-    print(f"Registration successful! Your Customer ID is {cust_id}.")
-
-
-def login():
-    while True:
-        df = load_csv(REGISTERED, REGISTERED_COLUMNS)
-        x=input('Enter your name\n')
-        y=input('Enter your registered number\n')
-        if y in df["Phone"].values:
-            record = df[df["Phone"] == y].iloc[0]
-            print ("🏥 💊 🤝 WELCOME 🤝 💊 🏥")
-            print(f"Hello, {record['Name']}! You are now logged in.\n")
-            return
-        else:
-            print("x x INCORRECT MOBILE NUMBER x x")
-            print("ACCESS DENIED! TRY AGAIN\n")
-
-            break
-
-        
-def generate_unique_customer_id():
-    customers_df = load_csv(REGISTERED, REGISTERED_COLUMNS)
-    
-    existing_ids = set(customers_df["Cust_ID"].dropna().astype(str))
-    
-    # Generate until unique ID found
-    while True:
-        cust_id = "C" + str(np.random.randint(1000, 9999))
-        if cust_id not in existing_ids:
-            return cust_id
-        
 
 # ==========================================================
-# REPORTS AND ANALYSIS
+# RUN
 # ==========================================================
-
-
-def performance():
-    while True:
-        print("\n ✎ᝰ.ᐟ⋆⑅˚₊ MANAGER MENU ⋆⑅˚₊✎ᝰ.ᐟ")
-        print("1. Daily Summary & Occupancy Rate")
-        print("2. Client Registration Report")
-        print("3. Revenue Growth / Decline")
-        print("4. Back to Manager Menu")
-        ch = input("Enter choice: ")
-
-        if ch == "1":
-            summary()
-        elif ch == "2":
-            bookings()
-        elif ch == "3":
-            revenue()
-        elif ch == "4":
-            manager_menu()   
-        elif ch == "5":
-            break
-        else:
-            print("❌ Invalid input.")
-
-
-def summary():
-
-    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
-    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
-
-    tot_rooms = len(rooms)
-    booked = len(rooms[rooms["Status"].str.lower() == "booked"])
-    available_rooms = tot_rooms - booked
-    occupancy_rate = (booked / tot_rooms * 100) if tot_rooms > 0 else 0
-
-    print("\nˏ ✄┈┈┈┈┈┈┈┈ Daily Summary ┈┈┈┈┈┈┈┈")
-    print()
-    print(f"Total Rooms: {tot_rooms}")
-    print(f"Booked Rooms: {booked}")
-    print(f"Available Rooms: {available_rooms}")
-    print(f"Occupancy Rate: {occupancy_rate:.2f}%")
-    print(f"Total Bookings Today: {len(bookings)}")
-
-    today = datetime.today().strftime("%d-%m-%Y")
-    t_bookings = bookings[bookings["CheckIn"] == today]
-    if not t_bookings.empty:
-        print("\nToday's Check-ins:")
-        print(t_bookings[["BookingID", "CustomerName", "RoomID"]].to_string(index=False))
-    else:
-        print("\n No check-ins today.")
-
-
-def bookings():
-    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
-    if df.empty:
-        print("No registered clients yet.")
-        return
-
-    print("\n ₊˚🗒 ˎ𖤐 ✎ᝰ. CLIENT REGISTRATION REPORT ✎ᝰ. 𖤐ˎ 🗒")
-    print(df.to_string(index=False))
-
-
-
-def revenue():
-    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
-    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
-
-    if bookings.empty or rooms.empty:
-        print("No data available for revenue analysis.")
-        return
-
-    merged = pd.merge(bookings, rooms, on="RoomID", how="left")
-
-    #finding daily revenue 
-    merged["Revenue"] = merged["Price"].astype(float)
-    revenue_by_date = merged.groupby("CheckIn")["Revenue"].sum().reset_index()
-
-    print("\n ˚₊‧꒰ა $ ໒꒱ ‧₊˚  REVENUE REPORT  ˚₊‧꒰ა $ ໒꒱ ‧₊˚ ")
-    print(revenue_by_date.to_string(index=False))
-
-    # growth
-    if len(revenue_by_date) > 1:
-        growth = revenue_by_date["Revenue"].pct_change() * 100
-        revenue_by_date["Growth %"] = growth.round(2)
-        print("\n Revenue Growth/Decline Trend:")
-        print(revenue_by_date.to_string(index=False))
-    else:
-        print("\nNot enough data to calculate growth trend.")
-
-def booking_history_report():
-    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
-    if bookings.empty:
-        print("No booking history found.")
-        return
-
-    name = input("Enter Client Name to view history: ").strip()
-    record = bookings[bookings["CustomerName"].str.lower() == name.lower()]
-
-    if record.empty:
-        print("No bookings found for this client.")
-    else: 
-        print(f"\n ₊˚.🎧 ✩ BOOKING HISTORY FOR {name.upper()}:  ₊˚.🎧 ✩  ")
-        print(record.to_string(index=False))
-
-        # Simulate receipts
-        rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
-        merged = pd.merge(record, rooms, on="RoomID", how="left")
-        merged["Revenue"] = merged["Price"].astype(float)
-        total = merged["Revenue"].sum()
-
-
-# ==========================================================
-# RUN 
-# ==========================================================
-
-entry()
+if __name__ == "__main__":
+    entry()
