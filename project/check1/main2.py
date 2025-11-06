@@ -724,18 +724,25 @@ def manager_menu():
         print("1. Room Management")
         print("2. View All Bookings")
         print("3. Customer Records")
-        print("4. Exit to Main Menu")
+        print("4. Staff Management")  # 🆕 Added new option
+        print("5. Exit to Main Menu")
+
         ch = input("Enter choice: ")
+
         if ch == "1":
-            room_tasks()
+            room_tasks()  # Handles room-related tasks
         elif ch == "2":
             view_all_bookings()
         elif ch == "3":
             customer_menu()
         elif ch == "4":
+            staff_management()  # 🆕 Connects to the Staff Management Module
+        elif ch == "5":
+            print("Returning to main menu...")
             break
         else:
             print("❌ Invalid input.")
+
 
 
 def room_tasks():
@@ -793,6 +800,144 @@ def customer_portal():
             print("❌ Invalid input. Please try again.")
 
 
+# ==========================================================
+# 👨‍🍳 STAFF MANAGEMENT MODULE
+# ==========================================================
+
+def staff_management():
+    print("\n📋 STAFF MANAGEMENT MENU 📋")
+    while True:
+        print("\n1. Add Staff Member")
+        print("2. View All Staff")
+        print("3. Update Staff Details")
+        print("4. Remove Staff")
+        print("5. Search Staff by Role")
+        print("6. Back to Manager Menu")
+
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            add_staff()
+        elif choice == "2":
+            view_staff()
+        elif choice == "3":
+            update_staff()
+        elif choice == "4":
+            remove_staff()
+        elif choice == "5":
+            search_staff()
+        elif choice == "6":
+            break
+        else:
+            print("❌ Invalid choice, please try again.")
+
+
+def add_staff():
+    try:
+        df = pd.read_csv("staff.csv")
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=["StaffID", "Name", "Role", "Contact", "Salary", "JoinDate"])
+
+    sid = f"S{len(df) + 1:03}"
+    name = input("Enter staff name: ")
+    role = input("Enter role (Manager/Receptionist/Chef/etc.): ")
+    contact = input("Enter contact number: ")
+
+    try:
+        salary = float(input("Enter salary: "))
+    except ValueError:
+        print("❌ Invalid salary amount.")
+        return
+
+    join_date = datetime.today().strftime('%Y-%m-%d')
+
+    new_staff = pd.DataFrame([{
+        "StaffID": sid,
+        "Name": name,
+        "Role": role,
+        "Contact": contact,
+        "Salary": salary,
+        "JoinDate": join_date
+    }])
+
+    df = pd.concat([df, new_staff], ignore_index=True)
+    df.to_csv("staff.csv", index=False)
+
+    print(f"✅ Staff member {name} added successfully with ID {sid}.")
+
+
+def view_staff():
+    try:
+        df = pd.read_csv("staff.csv")
+        if df.empty:
+            print("No staff records found.")
+        else:
+            print("\n📋 Current Staff List:\n")
+            print(df.to_string(index=False))
+    except FileNotFoundError:
+        print("No staff data found yet.")
+
+
+def update_staff():
+    try:
+        df = pd.read_csv("staff.csv")
+    except FileNotFoundError:
+        print("No staff data available.")
+        return
+
+    sid = input("Enter Staff ID to update: ")
+    if sid not in df["StaffID"].values:
+        print("❌ No staff found with that ID.")
+        return
+
+    print("Leave blank if no change.")
+    new_salary = input("Enter new salary: ")
+    new_role = input("Enter new role: ")
+
+    if new_salary:
+        try:
+            df.loc[df["StaffID"] == sid, "Salary"] = float(new_salary)
+        except ValueError:
+            print("Invalid salary input — change ignored.")
+    if new_role:
+        df.loc[df["StaffID"] == sid, "Role"] = new_role
+
+    df.to_csv("staff.csv", index=False)
+    print("✅ Staff details updated successfully.")
+
+
+def remove_staff():
+    try:
+        df = pd.read_csv("staff.csv")
+    except FileNotFoundError:
+        print("No staff data available.")
+        return
+
+    sid = input("Enter Staff ID to remove: ")
+    if sid not in df["StaffID"].values:
+        print("❌ No such staff found.")
+        return
+
+    df = df[df["StaffID"] != sid]
+    df.to_csv("staff.csv", index=False)
+    print(f"✅ Staff {sid} removed successfully.")
+
+
+def search_staff():
+    try:
+        df = pd.read_csv("staff.csv")
+    except FileNotFoundError:
+        print("No staff data available.")
+        return
+
+    role = input("Enter role to search (e.g., Receptionist, Chef): ")
+    results = df[df["Role"].str.lower() == role.lower()]
+
+    if results.empty:
+        print("No staff found for this role.")
+    else:
+        print("\n👩‍🍳 Matching Staff:\n")
+        print(results.to_string(index=False))
 
 
 # ==========================================================
