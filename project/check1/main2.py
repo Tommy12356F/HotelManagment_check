@@ -577,6 +577,106 @@ def book_banquet_hall():
     df.to_csv(filename, index=False)
     print(f"\n✅ Banquet Hall slot booked successfully for {selected_slot['time']} on {date_obj}!")
     print("Record saved in banquet_hall_bookings.csv\n")
+def book_adventure_activities():
+    print("\n=== ADVENTURE ACTIVITIES BOOKING ===")
+
+    # Ask for date
+    date_str = input("Enter the date for adventure activities (YYYY-MM-DD): ")
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        print("❌ Invalid date format. Please use YYYY-MM-DD.")
+        return
+
+    # List of activities
+    activities = [
+        "Rock Climbing / Rappelling",
+        "Zip Lining",
+        "Mountain Biking / ATV Ride",
+        "Trekking / Nature Trail",
+        "Obstacle / Rope Course"
+    ]
+
+    # Default 5 slots per activity
+    default_slots = 5
+
+    # Display activity list with slot count
+    print(f"\nAvailable Adventure Activities for {date_obj}")
+    print("----------------------------------------------------------")
+    for i, act in enumerate(activities, 1):
+        print(f"{i}. {act}  (Slots available: {default_slots})")
+    print("----------------------------------------------------------")
+
+    # Ask user to choose an activity
+    try:
+        act_choice = int(input("Select the activity number (1-5): "))
+        if act_choice not in range(1, 6):
+            print("Invalid choice.")
+            return
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    selected_activity = activities[act_choice - 1]
+
+    # Create time slots for the chosen activity
+    possible_times = ["08:00 AM", "09:30 AM", "11:00 AM", "02:00 PM", "04:00 PM"]
+
+    print(f"\nAvailable time slots for {selected_activity} on {date_obj}")
+    print("----------------------------------------------------------")
+    for i, time in enumerate(possible_times, 1):
+        print(f"{i}. {time}")
+    print("----------------------------------------------------------")
+
+    # Ask if user wants to book
+    choice = input("Would you like to book a slot? (yes/no): ").lower()
+    if choice != "yes":
+        print("No booking made.")
+        return
+
+    try:
+        slot_choice = int(input("Enter the slot number (1-5): "))
+        if slot_choice not in range(1, 6):
+            print("Invalid slot number.")
+            return
+    except ValueError:
+        print("Invalid input.")
+        return
+
+    selected_time = possible_times[slot_choice - 1]
+    cust_id = input("Enter your Customer ID: ")
+
+    # Pricing
+    print("Note: Each adventure activity booking costs ₹500.")
+    confirm = input("Confirm booking? (yes/no): ").lower()
+    if confirm != "yes":
+        print("Booking cancelled.")
+        return
+
+    print("₹500 will be added to your bill for this activity.")
+    # update_customer_bill(cust_id, 500)  # Uncomment once billing function ready
+
+    # Prepare record
+    record = {
+        "date": str(date_obj),
+        "activity": selected_activity,
+        "time_slot": selected_time,
+        "customer_id": cust_id,
+        "charge": 500,
+        "status": "Booked"
+    }
+
+    # Save booking
+    filename = "adventure_activities.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        df = pd.concat([df, pd.DataFrame([record])], ignore_index=True)
+    else:
+        df = pd.DataFrame([record])
+
+    df.to_csv(filename, index=False)
+    print(f"\n✅ Adventure activity '{selected_activity}' booked for {selected_time} on {date_obj}!")
+    print("Record saved in adventure_activities.csv\n")
 
 
 # ==========================================================
@@ -669,7 +769,8 @@ def customer_portal():
         print("3. Room Service")
         print("4. Swimming Pool Booking")
         print("5. Banquet Hall Booking")
-        print("6. Back to Main Menu")
+        print("6. Adventure Activities")  # 🆕 Added
+        print("7. Back to Main Menu")     # 🆕 Renumbered
 
         ch = input("Enter your choice: ")
 
@@ -684,10 +785,13 @@ def customer_portal():
         elif ch == "5":
             book_banquet_hall()
         elif ch == "6":
+            book_adventure_activities()   # 🆕 Added call
+        elif ch == "7":
             print("Returning to main menu...")
             break
         else:
             print("❌ Invalid input. Please try again.")
+
 
 
 
