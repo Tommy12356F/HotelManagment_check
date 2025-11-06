@@ -747,7 +747,9 @@ def manager_menu():
         print("2. View All Bookings")
         print("3. Customer Records")
         print("4. Staff Management")  # 🆕 Added new option
-        print("5. Exit to Main Menu")
+        print("5. Billing ")
+        print("6. Performance")
+        print("7. Exit to Main Menu")
 
         ch = input("Enter choice: ")
 
@@ -760,6 +762,10 @@ def manager_menu():
         elif ch == "4":
             staff_management()  # 🆕 Connects to the Staff Management Module
         elif ch == "5":
+            billing_menu()
+        elif ch == "6":
+            performance()
+        elif ch == "7":
             print("Returning to main menu...")
             break
         else:
@@ -991,21 +997,18 @@ def performance():
     while True:
         print("\n ✎ᝰ.ᐟ⋆⑅˚₊ MANAGER MENU ⋆⑅˚₊✎ᝰ.ᐟ")
         print("1. Daily Summary & Occupancy Rate")
-        print("2. Client Registration Report")
-        print("3. Revenue Growth / Decline")
-        print("4. Inventory Report")
-        print("5. Back to Manager Menu")
+        print("2. Revenue Growth / Decline")
+        print("3. Inventory Report")
+        print("4. Back to Manager Menu")
         ch = input("Enter choice: ")
 
         if ch == "1":
             summary()
         elif ch == "2":
-            bookings()
-        elif ch == "3":
             revenue()
-        elif ch == "4":
+        elif ch == "3":
             inventory()
-        elif ch == "5":
+        elif ch == "4":
             break
         else:
             print("❌ Invalid input.")
@@ -1037,15 +1040,6 @@ def summary():
     else:
         print("\nNo check-ins today.")
 
-
-def bookings():
-    df = load_csv(REGISTERED, REGISTERED_COLUMNS)
-    if df.empty:
-        print("No registered clients yet.")
-        return
-
-    print("\n ₊˚🗒 ˎ𖤐 ✎ᝰ. CLIENT REGISTRATION REPORT ✎ᝰ. 𖤐ˎ 🗒")
-    print(df.to_string(index=False))
 
 
 
@@ -1195,6 +1189,36 @@ def low_stock_alerts():
         return
     print("\n⚠️ LOW STOCK ALERT ⚠️")
     print(low[["ItemID", "ItemName", "Quantity", "MinThreshold"]].to_string(index=False))
+
+    choice = input("Do you want to restock any item? (yes/no): ").strip().lower()
+    if choice != "yes":
+        return df
+
+    try:
+        item_id = int(input("Enter the ItemID to restock: "))
+    except ValueError:
+        print("Invalid input! Must be an integer.")
+        return df
+
+    if item_id not in df["ItemID"].values:
+        print("ItemID not found.")
+        return df
+
+    idx = df.index[df["ItemID"] == item_id][0]
+    print(f"Current quantity of '{df.at[idx, 'ItemName']}': {df.at[idx, 'Quantity']}")
+
+    try:
+        add_qty = int(input("Enter quantity to add: "))
+        if add_qty < 0:
+            print("Quantity cannot be negative.")
+            return df
+    except ValueError:
+        print("Invalid input! Must be an integer.")
+        return df
+
+    df.at[idx, "Quantity"] += add_qty
+    print(f"✅ '{df.at[idx, 'ItemName']}' updated. New quantity: {df.at[idx, 'Quantity']}\n")
+    return df
 
 
 
