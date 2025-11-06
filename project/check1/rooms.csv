@@ -1,0 +1,6 @@
+RoomID,RoomType,Price,Status
+101,Single,1500,Available
+102,Double,2000,Booked
+103,Suite,3500,Available
+556,Single,5000,Booked
+192,Single,5646,Available
