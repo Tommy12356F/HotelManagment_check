@@ -25,15 +25,37 @@ COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegD
 
 # ---------------------- CSV HELPERS ------------------------
 def load_csv(filename, columns):
+    """
+    Loads a CSV file safely. 
+    If file is missing or empty, creates a new one with the given columns.
+    """
     try:
-        df = pd.read_csv(filename, dtype=str)
-    except FileNotFoundError:
+        # Check if the file exists and is not empty
+        if os.path.exists(filename) and os.path.getsize(filename) > 0:
+            df = pd.read_csv(filename, dtype=str)
+        else:
+            print(f"⚠️ File '{filename}' is empty or missing headers. Creating a new one.")
+            df = pd.DataFrame(columns=columns)
+            df.to_csv(filename, index=False)
+        return df
+
+    except pd.errors.EmptyDataError:
+        # Handle the specific "no columns" error
+        print(f"⚠️ '{filename}' was empty. Creating a new blank file.")
         df = pd.DataFrame(columns=columns)
         df.to_csv(filename, index=False)
-    for col in columns:
-        if col not in df.columns:
-            df[col] = ""
-    return df[columns]
+        return df
+
+    except FileNotFoundError:
+        print(f"⚠️ '{filename}' not found. Creating a new file.")
+        df = pd.DataFrame(columns=columns)
+        df.to_csv(filename, index=False)
+        return df
+
+    except Exception as e:
+        print(f"❌ Error loading {filename}: {e}")
+        return pd.DataFrame(columns=columns)
+
 
 
 def save_csv(filename, df):
