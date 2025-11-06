@@ -14,7 +14,7 @@ REGISTERED = "regist.csv"
 
 ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
-CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
+CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "Room", "StayDays", "CreatedAt"]
 REGISTERED_COLUMNS = ["Cust_ID", "Name", "Age", "Phone", "Email"]
 
 
@@ -39,109 +39,229 @@ def save_csv(filename, df):
 
 # ==========================================================
 # 🧾 CUSTOMER MANAGEMENT (from customer.py)
+========================TANVI===============================
 # ==========================================================
-def add_customer():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
-    name = input("Enter Customer Name: ").strip()
-    phone = input("Enter Phone Number: ").strip()
-    email = input("Enter Email: ").strip()
-    room_id = input("Enter Room ID (if any): ").strip()
-    try:
-        days = int(input("Enter Days of Stay: "))
-    except ValueError:
-        days = 0
+"""
+Customer Management Module
+- Pandas DataFrame stored to customers.csv
+- Uses NumPy for ID generation & stay duration stats
+- Full CRUD + validation + analytics
+"""
 
-    cust_id = "C" + str(np.random.randint(1000, 9999))
-    reg_date = datetime.today().strftime("%Y-%m-%d")
+# Validation 
+def validate_phone(phone):
+    if not isinstance(phone, str) or len(phone.strip()) != 10:
+        return False
+    arr = np.array(list(phone))
+    return np.all(arr >= "0") and np.all(arr <= "9")
 
-    new_row = pd.DataFrame([[cust_id, name, phone, email, room_id, days, reg_date]],
-                           columns=CUSTOMER_COLUMNS)
-    df = pd.concat([df, new_row], ignore_index=True)
-    save_csv(CUSTOMER_FILE, df)
-    print(f" Customer {name} added successfully! Customer ID: {cust_id}")
+def validate_email(email):
+    return isinstance(email, str) and "@" in email and "." in email.split("@")[-1]
 
+#  ID Generation 
+def generate_customer_id(df):
+    if df.empty or df["CustomerID"].dropna().empty:
+        return 1001
 
-def view_customers():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
-    if df.empty:
-        print(" No customers found.")
-        return
-    print("\n--- CUSTOMER RECORDS ---")
-    print(df.to_string(index=False))
-    print("------------------------")
+    existing_ids = df["CustomerID"].dropna().astype(int).to_numpy()
+    new_id = int(np.max(existing_ids) + 1)
+    return new_id
 
+#  CRUD 
+def add_customer(df):
+    cid = generate_customer_id(df)
+    print(f"\nAssigned Customer ID: {cid}")
 
-def search_customer():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
-    key = input("Enter Customer ID / Name / Phone to search: ").strip().lower()
-    result = df[df.apply(lambda row: key in row.astype(str).str.lower().values, axis=1)]
-    if result.empty:
-        print(" No matching customer found.")
-    else:
-        print(result.to_string(index=False))
+    name = input("Enter Name: ").strip()
+    while not name:
+        name = input("Name cannot be empty. Enter Name: ").strip()
 
-
-def update_customer():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
-    cid = input("Enter Customer ID to update: ").strip()
-    if cid not in df["CustomerID"].values:
-        print(" Customer not found.")
-        return
-    print("Leave fields blank to keep old values.")
-    new_phone = input("New Phone: ").strip()
-    new_email = input("New Email: ").strip()
-    new_room = input("New Room ID: ").strip()
-    new_days = input("New Days of Stay: ").strip()
-
-    mask = df["CustomerID"] == cid
-    if new_phone:
-        df.loc[mask, "Phone"] = new_phone
-    if new_email:
-        df.loc[mask, "Email"] = new_email
-    if new_room:
-        df.loc[mask, "RoomID"] = new_room
-    if new_days:
-        df.loc[mask, "DaysOfStay"] = new_days
-
-    save_csv(CUSTOMER_FILE, df)
-    print(" Customer updated successfully.")
-
-
-def delete_customer():
-    df = load_csv(CUSTOMER_FILE, CUSTOMER_COLUMNS)
-    cid = input("Enter Customer ID to delete: ").strip()
-    if cid not in df["CustomerID"].values:
-        print("Customer not found.")
-        return
-    df = df[df["CustomerID"] != cid]
-    save_csv(CUSTOMER_FILE, df)
-    print(" Customer deleted successfully.")
-
-
-def customer_menu():
     while True:
-        print("\n⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆ ˚₊𖥧⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆CUSTOMER MANAGEMENT ⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆ ˚₊𖥧⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆")
-        print("1. Add Customer")
-        print("2. View Customers")
-        print("3. Search Customer")
-        print("4. Update Customer")
-        print("5. Delete Customer")
-        print("6. Back")
-        ch = input("Enter your choice: ")
-        if ch == "1":
-            add_customer()
-        elif ch == "2":
-            view_customers()
-        elif ch == "3":
-            search_customer()
-        elif ch == "4":
-            update_customer()
-        elif ch == "5":
-            delete_customer()
-        elif ch == "6":
+        phone = input("Enter Phone (10 digits): ").strip()
+        if validate_phone(phone):
+            break
+        print("Invalid phone!")
+
+    while True:
+        email = input("Enter Email: ").strip()
+        if validate_email(email):
+            break
+        print("Invalid email!")
+
+    room = input("Enter Room No: ").strip() or pd.NA
+
+    #  Stay Days (Hybrid)
+    stay = input("Stay Duration (days) — leave blank for auto: ").strip()
+    if stay.isdigit():
+        staydays = int(stay)
+    else:
+        staydays = int(np.random.randint(1, 31))
+        print(f"Auto-assigned Stay Days: {staydays}")
+
+    # Prevent duplicate phone
+    if not df[df["Phone"] == phone].empty:
+        print("Phone already exists! Not adding.")
+        return df
+
+    new_row = {
+        "CustomerID": cid,
+        "Name": name,
+        "Phone": phone,
+        "Email": email,
+        "Room": room,
+        "StayDays": staydays,
+        "CreatedAt": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    save_data(df)
+    print("✅ Customer added.\n")
+    return df
+
+def view_customers(df):
+    if df.empty:
+        print("\nNo customers found.\n")
+        return
+    print("\nCustomer List:")
+    print(df.to_string(index=False), "\n")
+
+def search_customer(df):
+    key = input("Search by ID / Phone / Name: ").strip()
+    if key.isdigit():
+        result = df[(df["CustomerID"] == int(key)) | (df["Phone"] == key)]
+    else:
+        result = df[df["Name"].str.contains(key, case=False, na=False)]
+
+    if result.empty:
+        print("No record found.\n")
+    else:
+        print(result.to_string(index=False), "\n")
+
+def update_customer(df):
+    """Update customer details including StayDays & CreatedAt."""
+    cid = input("Enter Customer ID to update: ").strip()
+    if not cid.isdigit():
+        print("Invalid ID.")
+        return df
+    cid = int(cid)
+
+    idx = df.index[df["CustomerID"] == cid]
+    if idx.empty:
+        print("Customer not found.\n")
+        return df
+
+    i = idx[0]
+    print("Leave blank to keep same value.")
+
+    current_phone = df.at[i,"Phone"]
+    current_email = df.at[i,"Email"]
+    current_room = df.at[i,"Room"]
+    current_stay = df.at[i,"StayDays"]
+    current_created = df.at[i,"CreatedAt"]
+
+    # --- Phone ---
+    new_phone = input(f"New Phone [{current_phone}]: ").strip()
+    if new_phone:
+        if validate_phone(new_phone):
+            df.at[i,"Phone"] = new_phone
+        else:
+            print("Invalid phone, not updated.")
+
+    # --- Email ---
+    new_email = input(f"New Email [{current_email}]: ").strip()
+    if new_email:
+        if validate_email(new_email):
+            df.at[i,"Email"] = new_email
+        else:
+            print("Invalid email, not updated.")
+
+    # --- Room ---
+    new_room = input(f"New Room [{current_room}]: ").strip()
+    if new_room:
+        df.at[i,"Room"] = new_room
+
+    # --- Stay Days ---
+    new_stay = input(f"New Stay Days [{current_stay}]: ").strip()
+    if new_stay:
+        if new_stay.isdigit():
+            df.at[i,"StayDays"] = int(new_stay)
+        else:
+            print("Invalid stay days, not updated.")
+
+    # --- Created At ---
+    new_created = input(f"New CreatedAt (YYYY-MM-DD HH:MM:SS) [{current_created}]: ").strip()
+    if new_created:
+        try:
+            # validate datetime format
+            datetime.strptime(new_created, "%Y-%m-%d %H:%M:%S")
+            df.at[i,"CreatedAt"] = new_created
+        except ValueError:
+            print("Invalid datetime format! Correct format: YYYY-MM-DD HH:MM:SS")
+            print("Not updated.")
+
+    save_data(df)
+    print(" Customer updated successfully.\n")
+    return df
+
+
+def delete_customer(df):
+    cid = input("Enter Customer ID to delete: ").strip()
+    if not cid.isdigit(): return df
+    cid = int(cid)
+
+    idx = df.index[df["CustomerID"] == cid]
+    if idx.empty:
+        print("Customer not found.\n")
+        return df
+
+    if input("Type YES to confirm delete: ") == "YES":
+        df = df.drop(idx).reset_index(drop=True)
+        save_data(df)
+        print("Deleted.\n")
+    return df
+
+# Stats
+def stay_duration_stats(df):
+    if df.empty or df["StayDays"].dropna().empty:
+        print("No stay data yet.\n")
+        return
+
+    arr = df["StayDays"].dropna().to_numpy()
+    print("\n Stay Duration Stats:")
+    print(f"- Total Guests: {len(arr)}")
+    print(f"- Avg Stay: {np.mean(arr):.2f} days")
+    print(f"- Max Stay: {np.max(arr)} days")
+    print(f"- Min Stay: {np.min(arr)} days\n")
+
+# Menu 
+def main():
+    df = load_data()
+    while True:
+        print("""
+⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆˚₊𖥧CUSTOMER MANAGEMENT⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆ ˚₊𖥧⋆꙳•❅‧*₊⋆☃︎‧*❆₊⋆
+1. Add Customer
+2. View Customers
+3. Search Customer
+4. Update Customer
+5. Delete Customer
+6. Customer Analytics (Stay Stats)
+7. Exit
+""")
+        ch = input("Enter choice: ")
+        if ch == "1": df = add_customer(df)
+        elif ch == "2": view_customers(df)
+        elif ch == "3": search_customer(df)
+        elif ch == "4": df = update_customer(df)
+        elif ch == "5": df = delete_customer(df)
+        elif ch == "6": stay_duration_stats(df)
+        elif ch == "7":
+            print("Goodbye!")
             break
         else:
-            print(" Invalid input.")
+            print("Invalid.\n")
+
+if __name__ == "__main__":
+    main()
 
 # ==========================================================
 # 🏨 ROOM MANAGEMENT
