@@ -39,6 +39,7 @@ def save_csv(filename, df):
 
 # ==========================================================
 # 🧾 CUSTOMER MANAGEMENT (from customer.py)
+#======================TANVI================================
 # ==========================================================
 def load_data():
     """Loads the customer data safely, creating the CSV if missing."""
