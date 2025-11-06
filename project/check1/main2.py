@@ -18,7 +18,7 @@ CSV_FILE = "customers.csv"
 COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 
 
-c_id = 100
+
 # ==========================================================
 
 # ---------------------- CSV HELPERS ------------------------
