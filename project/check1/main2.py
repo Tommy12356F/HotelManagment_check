@@ -1044,31 +1044,36 @@ def summary():
 
 
 def revenue():
-    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS)
-    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
+    bookings = load_csv(BOOKING_FILE, BOOK_COLUMNS) 
+    rooms = load_csv(ROOM_FILE, ROOM_COLUMNS) 
 
-    if bookings.empty or rooms.empty:
-        print("No data available for revenue analysis.")
+    if bookings.empty or rooms.empty: 
+        print("No data available for revenue analysis.") 
         return
+    
+    merged = pd.merge(bookings, rooms, on="RoomID", how="left") 
+    print(merged.head())
 
-    # Merge bookings with room prices
-    merged = pd.merge(bookings, rooms, on="RoomID", how="left")
+    merged["Price"] = (merged["Price"].astype(str).str.replace(r"[^\d.]", "", regex=True))
+    merged["Price"] = pd.to_numeric(merged["Price"], errors="coerce")
+    merged["CheckIn"] = pd.to_datetime(merged["CheckIn"], errors="coerce")
 
-    # Simulate daily revenue grouping by CheckIn date
-    merged["Revenue"] = merged["Price"].astype(float)
-    revenue_by_date = merged.groupby("CheckIn")["Revenue"].sum().reset_index()
 
-    print("\n ˚₊‧꒰ა $ ໒꒱ ‧₊˚  REVENUE REPORT  ˚₊‧꒰ა $ ໒꒱ ‧₊˚ ")
-    print(revenue_by_date.to_string(index=False))
+# Simulate daily revenue grouping by CheckIn date 
+    merged["Revenue"] = merged["Price"]
+    revenue_by_date = merged.groupby("CheckIn")["Revenue"].sum().reset_index() 
 
-    # Calculate growth rate
-    if len(revenue_by_date) > 1:
-        growth = revenue_by_date["Revenue"].pct_change() * 100
-        revenue_by_date["Growth %"] = growth.round(2)
-        print("\n📈 Revenue Growth/Decline Trend:")
-        print(revenue_by_date.to_string(index=False))
-    else:
-        print("\nNot enough data to calculate growth trend.")
+    print("\n ˚₊‧꒰ა $ ໒꒱ ‧₊˚ REVENUE REPORT ˚₊‧꒰ა $ ໒꒱ ‧₊˚ ") 
+    print(revenue_by_date.to_string(index=False)) 
+
+    # Calculate growth rate 
+    if len(revenue_by_date) > 1: 
+        growth = revenue_by_date["Revenue"].pct_change() * 100 
+        revenue_by_date["Growth %"] = growth.round(2) 
+        print("\n📈 Revenue Growth/Decline Trend:") 
+        print(revenue_by_date.to_string(index=False)) 
+    else: 
+        print("\nNot enough data to calculate growth trend.") 
 
 
 # ==========================================================
@@ -1237,19 +1242,6 @@ def inventory_value_report():
     print("Category-wise Breakdown:")
     print(category_wise.to_string(index=False))
 
-def most_used_items():
-    """Tracks which items are most frequently updated (based on update count)."""
-    df = load_inventory()
-    if df.empty:
-        print("No inventory records.")
-        return
-
-    usage_count = df.copy()
-    usage_count["UsageScore"] = np.random.randint(1, 20, len(df))  # Simulated metric
-    top_items = usage_count.sort_values("UsageScore", ascending=False).head(5)
-
-    print("\n🏆 MOST USED ITEMS (Sampled Data) 🏆")
-    print(top_items[["ItemID", "ItemName", "Category", "UsageScore"]].to_string(index=False))
 
 ### MENU DRIVER
 
@@ -1263,8 +1255,7 @@ def inventory():
 4. View All Items
 5. Low Stock Alerts
 6. Inventory Value Report
-7. Most Used Items
-8. Back to Main Menu
+7. Back to Main Menu
 """)
         ch = input("Enter choice: ").strip()
         if ch == "1":
@@ -1280,8 +1271,6 @@ def inventory():
         elif ch == "6":
             inventory_value_report()
         elif ch == "7":
-            most_used_items()
-        elif ch == "8":
             print("Returning to main menu...")
             break
         else:
