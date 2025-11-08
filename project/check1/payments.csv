@@ -1,0 +1,8 @@
+PaymentID,BillingID,PaymentMethod,AmountPaid,PaymentDate,Status
+1,1,Credit Card,5250.0,2025-11-08,Paid
+2,2,UPI,4620.0,2025-11-08,Paid
+3,3,Cash,4620.0,2025-11-08,Paid
+4,4,Debit Card,7350.0,2025-11-08,Paid
+5,5,UPI,7875.0,2025-11-08,Paid
+6,3,Cash,4620.0,2025-11-08,Paid
+7,2,cash,4620.0,2025-11-09,Paid
