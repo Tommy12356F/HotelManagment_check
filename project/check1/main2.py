@@ -16,7 +16,8 @@ ROOM_COLUMNS = ["RoomID", "RoomType", "Price", "Status"]
 BOOK_COLUMNS = ["BookingID", "CustomerName", "RoomID", "CheckIn", "CheckOut"]
 CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 CSV_FILE = "customers.csv"
-COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
+
+
 
 # ==========================================================
 # ---------------------- CSV HELPERS ------------------------
@@ -1326,9 +1327,10 @@ def load_data():
         print(f"⚠️ Error loading data: {e}")
         df = pd.DataFrame(columns=BILL_COLS)
 
-    for col in COLUMNS:
+    for col in BILL_COLS:
         if col not in df.columns:
             df[col] = pd.NA
+    return df
 
 
 
@@ -1351,7 +1353,7 @@ def save_payment_data(df):
 
 # ---------------------- BILL GENERATION ----------------------
 def generate_bill():
-    customers = load_data(CUSTOMER_FILE)  
+    customers = load_data()  
     rooms = load_csv(ROOM_FILE, ROOM_COLUMNS)
     billings = load_billing_data()
 
