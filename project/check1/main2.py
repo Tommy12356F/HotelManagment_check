@@ -1407,43 +1407,43 @@ def generate_bill():
 
 # ---------------------- PAYMENT ----------------------
 def make_payment():
-    billings = load_billing_data()
-    payments = load_payment_data()
-
-    if billings.empty:
-        print("No billing records available.")
+    bills = load_billing_data()
+    if bills.empty:
+        print("No bills found.")
         return
 
-    bid = input("Enter Billing ID to pay: ").strip()
-    if bid not in billings["BillingID"].values:
+    try:
+        bill_id = int(input("Enter Billing ID to pay: ").strip())
+    except ValueError:
+        print("Invalid input. Please enter a valid numeric Billing ID.")
+        return
+
+    if bill_id not in bills["BillingID"].astype(int).values:
         print("Invalid Billing ID.")
         return
 
-    bill = billings[billings["BillingID"] == bid].iloc[0]
-    amount_due = bill["Total"]
+    bill = bills[bills["BillingID"].astype(int) == bill_id].iloc[0]
+    print("\n--- BILL DETAILS ---")
+    print(bill.to_string())
 
-    print(f"Amount Due: ₹{amount_due}")
-    method = input("Payment Method (Cash/Card/UPI): ").capitalize() or "Cash"
-    amount_paid = float(input("Enter Amount Paid: ") or amount_due)
+    amount = bill["Total"]
+    method = input("Enter Payment Method (Cash/UPI/Card): ").strip()
+    status = "Paid"
+    payment_date = datetime.now().strftime("%Y-%m-%d")
 
-    status = "Paid" if amount_paid >= amount_due else "Partial"
-    payment_id = "PAY" + str(np.random.randint(1000, 9999))
-    payment_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+    payments = load_payment_data()
     new_payment = pd.DataFrame([{
-        "PaymentID": payment_id,
-        "BillingID": bid,
+        "PaymentID": len(payments) + 1,
+        "BillingID": bill_id,
         "PaymentMethod": method,
-        "AmountPaid": amount_paid,
+        "AmountPaid": amount,
         "PaymentDate": payment_date,
         "Status": status
     }])
-
     payments = pd.concat([payments, new_payment], ignore_index=True)
     save_payment_data(payments)
 
-    print(f"\n✅ Payment Successful! ID: {payment_id}")
-    print(f"Status: {status}\n")
+    print(f"✅ Payment of ₹{amount} for Bill ID {bill_id} recorded successfully.")
 
 
 def view_bills():
