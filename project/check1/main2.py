@@ -18,11 +18,7 @@ CUSTOMER_COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfSta
 CSV_FILE = "customers.csv"
 COLUMNS = ["CustomerID", "Name", "Phone", "Email", "RoomID", "DaysOfStay", "RegDate"]
 
-
-
-
 # ==========================================================
-
 # ---------------------- CSV HELPERS ------------------------
 def load_csv(filename, columns):
     """
@@ -123,12 +119,29 @@ def validate_email(email):
 # ID GENERATION
 # ==========================================================
 def generate_customer_id(df):
-    """Auto-generates unique Customer ID."""
+    df = load_csv(CUSTOMER_FILE,CUSTOMER_COLUMNS)
+    #Auto-generates unique Customer ID.
     if df.empty or df["CustomerID"].dropna().empty:
         return 1001
     existing_ids = df["CustomerID"].dropna().astype(int).to_numpy()
     new_id = int(np.max(existing_ids) + 1)
     return new_id
+
+'''
+import numpy as np
+import pandas as pd
+
+df = load_csv(CUSTOMER_FILE,COLUMNS)
+def generate_customer_id(df, column="CustomerID", start=1001):
+    if df is None or df.empty or column not in df.columns:
+        return start
+    
+    # Convert to numeric safely, ignoring missing/non-numeric values
+    ids = pd.to_numeric(df[column], errors='coerce').dropna().astype(int)
+    if ids.empty:
+        return start
+    else:
+        return ids.max() + 1'''
 
 
 # ==========================================================
@@ -136,6 +149,7 @@ def generate_customer_id(df):
 # ==========================================================
 def add_customer(df):
     """Adds a new customer entry."""
+    df = load_csv(CUSTOMER_FILE,COLUMNS)
     cid = generate_customer_id(df)
     print(f"\nAssigned Customer ID: {cid}")
 
@@ -290,13 +304,14 @@ def delete_customer(df):
 # ==========================================================
 # ANALYTICS
 # ==========================================================
-def stay_duration_stats(df):
+def stay_duration_stats():
+    df = load_csv(CUSTOMER_FILE,CUSTOMER_COLUMNS)
     """Show statistical analytics of stay durations."""
     if df.empty or df["DaysOfStay"].dropna().empty:
         print("No stay data yet.\n")
         return
 
-    arr = df["DaysOfStay"].dropna().to_numpy()
+    arr = pd.to_numeric(df["DaysOfStay"], errors='coerce').dropna().to_numpy()
     print("\n📊 Stay Duration Stats 📊")
     print(f"- Total Guests: {len(arr)}")
     print(f"- Avg Stay: {np.mean(arr):.2f} days")
@@ -333,7 +348,7 @@ def customer_menu():
         elif ch == "5":
             df = delete_customer(df)
         elif ch == "6":
-            stay_duration_stats(df)
+            stay_duration_stats()
         elif ch == "7":
             print("Returning to main menu...\n")
             break
@@ -746,7 +761,7 @@ def manager_menu():
         print("1. Room Management")
         print("2. View All Bookings")
         print("3. Customer Records")
-        print("4. Staff Management")  # 🆕 Added new option
+        print("4. Staff Management")  
         print("5. Billing ")
         print("6. Performance")
         print("7. Exit to Main Menu")
@@ -775,7 +790,7 @@ def manager_menu():
 
 def room_tasks():
     while True:
-        print("\n--- RECEPTIONIST MENU ---")
+        print("\n--- ROOM MANAGEMENT MENU ---")
         print("1. Add Room")
         print("2. Update Room")
         print("3. View All Rooms")
